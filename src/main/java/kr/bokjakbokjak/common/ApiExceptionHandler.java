@@ -5,7 +5,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -22,7 +21,6 @@ import tools.jackson.databind.PropertyNamingStrategies;
 @RestControllerAdvice
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
-    private static final String INVALID_INPUT = "요청 값이 올바르지 않습니다.";
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ApiResponse.Failure> business(ApiException exception) {
@@ -35,8 +33,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)
     ResponseEntity<ApiResponse.Failure> forbidden() {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(ApiResponse.failure("FORBIDDEN", "이 요청에 접근할 수 없습니다.", Map.of()));
+        return ResponseEntity.status(ErrorCode.FORBIDDEN.status())
+                .body(ApiResponse.failure(ErrorCode.FORBIDDEN, Map.of()));
     }
 
     @Override
@@ -45,16 +43,17 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, String> errors = new LinkedHashMap<>();
         for (FieldError error : exception.getBindingResult().getFieldErrors()) {
             String name = PropertyNamingStrategies.SNAKE_CASE.nameForField(null, null, error.getField());
-            errors.putIfAbsent(name, error.getDefaultMessage() == null ? INVALID_INPUT : error.getDefaultMessage());
+            errors.putIfAbsent(name, error.getDefaultMessage() == null
+                    ? ErrorCode.INVALID_INPUT.message() : error.getDefaultMessage());
         }
-        return handleExceptionInternal(exception, ApiResponse.failure("INVALID_INPUT", INVALID_INPUT, errors),
+        return handleExceptionInternal(exception, ApiResponse.failure(ErrorCode.INVALID_INPUT, errors),
                 headers, status, request);
     }
 
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(
             HttpMessageNotReadableException exception, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
-        return handleExceptionInternal(exception, ApiResponse.failure("INVALID_INPUT", INVALID_INPUT, Map.of()),
+        return handleExceptionInternal(exception, ApiResponse.failure(ErrorCode.INVALID_INPUT, Map.of()),
                 headers, status, request);
     }
 
@@ -71,15 +70,15 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             return super.handleExceptionInternal(exception, failure, headers, status, request);
         }
         ApiResponse.Failure failure = switch (status.value()) {
-            case 400 -> ApiResponse.failure("INVALID_INPUT", INVALID_INPUT, Map.of());
-            case 401 -> ApiResponse.failure("UNAUTHORIZED", "로그인이 필요합니다.", Map.of());
-            case 403 -> ApiResponse.failure("FORBIDDEN", "이 요청에 접근할 수 없습니다.", Map.of());
-            case 404 -> ApiResponse.failure("RESOURCE_NOT_FOUND", "요청한 정보를 찾을 수 없습니다.", Map.of());
-            case 405 -> ApiResponse.failure("METHOD_NOT_ALLOWED", "지원하지 않는 요청 방식입니다.", Map.of());
-            case 415 -> ApiResponse.failure("UNSUPPORTED_MEDIA_TYPE", "지원하지 않는 데이터 형식입니다.", Map.of());
+            case 400 -> ApiResponse.failure(ErrorCode.INVALID_INPUT, Map.of());
+            case 401 -> ApiResponse.failure(ErrorCode.UNAUTHORIZED, Map.of());
+            case 403 -> ApiResponse.failure(ErrorCode.FORBIDDEN, Map.of());
+            case 404 -> ApiResponse.failure(ErrorCode.RESOURCE_NOT_FOUND, Map.of());
+            case 405 -> ApiResponse.failure(ErrorCode.METHOD_NOT_ALLOWED, Map.of());
+            case 415 -> ApiResponse.failure(ErrorCode.UNSUPPORTED_MEDIA_TYPE, Map.of());
             default -> status.is5xxServerError()
-                    ? ApiResponse.failure("INTERNAL_ERROR", "요청을 처리할 수 없습니다.", Map.of())
-                    : ApiResponse.failure("HTTP_ERROR", "요청을 처리할 수 없습니다.", Map.of());
+                    ? ApiResponse.failure(ErrorCode.INTERNAL_ERROR, Map.of())
+                    : ApiResponse.failure(ErrorCode.HTTP_ERROR, Map.of());
         };
         return super.handleExceptionInternal(exception, failure, headers, status, request);
     }
@@ -87,7 +86,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(Exception.class)
     ResponseEntity<ApiResponse.Failure> unexpected(Exception exception) {
         log.error("Unhandled API exception type={}", exception.getClass().getName());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.failure("INTERNAL_ERROR", "요청을 처리할 수 없습니다.", Map.of()));
+        return ResponseEntity.status(ErrorCode.INTERNAL_ERROR.status())
+                .body(ApiResponse.failure(ErrorCode.INTERNAL_ERROR, Map.of()));
     }
 }

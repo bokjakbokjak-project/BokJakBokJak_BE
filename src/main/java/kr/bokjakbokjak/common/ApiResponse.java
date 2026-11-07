@@ -12,11 +12,19 @@ public final class ApiResponse {
     public record Failure(boolean success, String code, String message, Map<String, String> errors) {
     }
 
+    public static <T> Success<T> success(T data) {
+        return success(SuccessCode.COMMON2000.name(), SuccessCode.COMMON2000.message(), data);
+    }
+
     public static <T> Success<T> success(String code, String message, T data) {
         return new Success<>(true, code, message, data);
     }
 
     public static Failure failure(String code, String message, Map<String, String> errors) {
         return new Failure(false, code, message, Map.copyOf(errors));
+    }
+
+    public static Failure failure(ErrorCode code, Map<String, String> errors) {
+        return failure(code.name(), code.message(), errors);
     }
 }

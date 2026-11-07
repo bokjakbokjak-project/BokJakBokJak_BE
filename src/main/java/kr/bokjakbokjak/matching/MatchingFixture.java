@@ -21,7 +21,7 @@ final class MatchingFixture implements UserQueryService, MatchingEngine {
                     List.of("CLEANING", "SLEEP_HABITS", "SMOKING")),
             SECOND_ID, new UserSummaryDto(
                     SECOND_ID, "민트초코", "컴퓨터공학과", "ACTIVE", 3,
-                    List.of("SMOKING", "CLEANING", "FOOD_WASTE")),
+                    List.of("SMOKING", "CLEANING", "PERSONAL_HYGIENE")),
             WITHDRAWN_ID, new UserSummaryDto(
                     WITHDRAWN_ID, "이전 사용자", "기계공학과", "WITHDRAWN", 2, List.of()));
 
@@ -71,7 +71,7 @@ final class MatchingFixture implements UserQueryService, MatchingEngine {
         String secondTolerance = "이틀 이상 지나도 괜찮아요";
 
         var item = new MatchItemDto(
-                "DISH", "FOOD_WASTE", "저녁을 먹었고, 음식물이 묻은 그릇이 책상 위에 남아 있어요.",
+                "DISH", "CLEANING", "저녁을 먹었고, 음식물이 묻은 그릇이 책상 위에 남아 있어요.",
                 new BigDecimal("0.5"), MatchLabel.NEED_ADJUST,
                 firstIsViewer ? FIRST_WEIGHT : SECOND_WEIGHT,
                 firstIsViewer ? SECOND_WEIGHT : FIRST_WEIGHT,

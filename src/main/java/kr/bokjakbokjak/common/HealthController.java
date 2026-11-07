@@ -8,6 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class HealthController {
     @GetMapping("/api/health")
     ApiResponse.Success<Map<String, String>> health() {
-        return ApiResponse.success("HEALTH_OK", "서비스가 응답합니다.", Map.of("status", "UP"));
+        return ApiResponse.success(Map.of("status", "UP"));
     }
 }

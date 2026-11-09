@@ -1,0 +1,22 @@
+name: Chore Template
+description: 빌드·설정·템플릿·의존성 등 기타 작업에 쓰는 템플릿
+title: "[Chore] "
+labels: ["🔧 chore"]
+
+body:
+  - type: input
+    id: chore-content
+    attributes:
+      label: "🔧 어떤 기타 사항인가요?"
+      description: 작업할 기타 사항을 한 줄로 적어주세요.
+      placeholder: ex. 배포 워크플로 추가
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: "👀 자세한 내용 (Optional)"
+      description: 설명이 부족하다면 더 자세한 내용을 적어주세요.
+      placeholder: ex. main push 시 GHCR 이미지 빌드 후 서버 배포
+    validations:
+      required: false

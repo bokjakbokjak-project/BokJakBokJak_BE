@@ -1,0 +1,22 @@
+name: Fix Template
+description: 버그나 잘못된 동작을 고칠 때 쓰는 템플릿
+title: "[Fix] "
+labels: ["🐛 fix"]
+
+body:
+  - type: input
+    id: fix-content
+    attributes:
+      label: "🐛 어떤 버그인가요?"
+      description: 고칠 문제를 한 줄로 적어주세요.
+      placeholder: ex. 안건 확정을 두 번 누르면 SYSTEM 메시지가 중복 생성됨
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: "👀 자세한 내용 (Optional)"
+      description: 재현 방법, 기대한 동작, 에러 로그 등을 적어주세요.
+      placeholder: ex. 1. 채팅방 입장 2. 안건 확정 버튼 연속 클릭
+    validations:
+      required: false

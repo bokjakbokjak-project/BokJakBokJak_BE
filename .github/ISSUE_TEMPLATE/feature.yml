@@ -1,0 +1,22 @@
+name: Feature Template
+description: 새 기능이나 API를 추가할 때 쓰는 템플릿
+title: "[Feat] "
+labels: ["✨ feature"]
+
+body:
+  - type: input
+    id: feature-content
+    attributes:
+      label: "✨ 어떤 기능인가요?"
+      description: 추가할 기능을 한 줄로 적어주세요.
+      placeholder: ex. 대화 요청 API 구현 (RM_07)
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: "👀 자세한 내용 (Optional)"
+      description: 기능 ID, 예외 처리 기준, 할 일 등 자세한 내용을 적어주세요.
+      placeholder: ex. 이미 최종 매칭된 사용자에게는 요청 불가
+    validations:
+      required: false

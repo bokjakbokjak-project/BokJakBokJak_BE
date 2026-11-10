@@ -9,6 +9,14 @@ public final class ApiException extends RuntimeException {
     private final Map<String, String> errors;
     private final Long retryAfterSeconds;
 
+    public ApiException(ErrorCode code) {
+        this(code, Map.of());
+    }
+
+    public ApiException(ErrorCode code, Map<String, String> errors) {
+        this(code.status(), code.name(), code.message(), errors);
+    }
+
     public ApiException(HttpStatus status, String code, String message) {
         this(status, code, message, Map.of());
     }
@@ -27,7 +35,8 @@ public final class ApiException extends RuntimeException {
     }
 
     public static ApiException rateLimited(long retryAfterSeconds) {
-        return new ApiException(HttpStatus.TOO_MANY_REQUESTS, "RATE_LIMITED", "잠시 후 다시 시도해주세요.",
+        return new ApiException(ErrorCode.RATE_LIMITED.status(), ErrorCode.RATE_LIMITED.name(),
+                ErrorCode.RATE_LIMITED.message(),
                 Map.of(), Math.max(1, retryAfterSeconds));
     }
 

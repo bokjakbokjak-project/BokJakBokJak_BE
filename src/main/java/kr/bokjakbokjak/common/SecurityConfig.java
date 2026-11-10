@@ -30,7 +30,7 @@ public class SecurityConfig {
     SecurityFilterChain apiSecurity(HttpSecurity http, JwtService jwtService, ObjectMapper mapper) throws Exception {
         AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
             response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
-            writeFailure(response, mapper, 401, "UNAUTHORIZED", "로그인이 필요하거나 인증이 만료되었습니다.");
+            writeFailure(response, mapper, ErrorCode.UNAUTHORIZED);
         };
         return http
                 .csrf(AbstractHttpConfigurer::disable)
@@ -41,11 +41,12 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .exceptionHandling(errors -> errors.authenticationEntryPoint(unauthorized)
                         .accessDeniedHandler((request, response, exception) ->
-                                writeFailure(response, mapper, 403, "FORBIDDEN", "이 요청에 접근할 수 없습니다.")))
+                                writeFailure(response, mapper, ErrorCode.FORBIDDEN)))
                 .authorizeHttpRequests(requests -> requests
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(new JwtAuthenticationFilter(jwtService, unauthorized),
                         UsernamePasswordAuthenticationFilter.class)
@@ -73,11 +74,11 @@ public class SecurityConfig {
     }
 
     private static void writeFailure(
-            HttpServletResponse response, ObjectMapper mapper, int status, String code, String message)
+            HttpServletResponse response, ObjectMapper mapper, ErrorCode code)
             throws IOException {
-        response.setStatus(status);
+        response.setStatus(code.status().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        mapper.writeValue(response.getOutputStream(), ApiResponse.failure(code, message, Map.of()));
+        mapper.writeValue(response.getOutputStream(), ApiResponse.failure(code, Map.of()));
     }
 }

@@ -15,11 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(CommonContractTest.TestController.class)
+@ActiveProfiles("test")
 class CommonContractTest {
     @Autowired MockMvc mvc;
     @Autowired JwtService jwtService;
@@ -43,6 +44,7 @@ class CommonContractTest {
         mvc.perform(get("/api/health"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value("COMMON2000"))
                 .andExpect(jsonPath("$.data.status").value("UP"));
     }
 
@@ -104,7 +106,7 @@ class CommonContractTest {
 
         @GetMapping("/api/test/conflict")
         void conflict() {
-            throw new ApiException(HttpStatus.CONFLICT, "SURVEY_REVISION_CONFLICT", "최신 설문을 조회해주세요.");
+            throw new ApiException(ErrorCode.SURVEY_REVISION_CONFLICT);
         }
 
         record Body(@NotBlank String displayName) {

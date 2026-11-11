@@ -16,6 +16,10 @@ public final class ApiResponse {
         return success(SuccessCode.COMMON2000.name(), SuccessCode.COMMON2000.message(), data);
     }
 
+    public static <T> Success<T> success(SuccessCode code, T data) {
+        return success(code.name(), code.message(), data);
+    }
+
     public static <T> Success<T> success(String code, String message, T data) {
         return new Success<>(true, code, message, data);
     }

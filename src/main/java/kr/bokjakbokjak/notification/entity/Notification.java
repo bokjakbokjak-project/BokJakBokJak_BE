@@ -58,6 +58,14 @@ public class Notification {
         return new Notification(receiverId, matchingId, type, content);
     }
 
+    public boolean isReceivedBy(Long userId) {
+        return receiverId.equals(userId);
+    }
+
+    public void markRead() {
+        this.read = true;
+    }
+
     public Long getId() {
         return id;
     }

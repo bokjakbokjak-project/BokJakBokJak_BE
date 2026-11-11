@@ -1,6 +1,7 @@
-package kr.bokjakbokjak.survey;
+package kr.bokjakbokjak.survey.dto;
 
 import java.util.List;
+import kr.bokjakbokjak.survey.entity.QuestionKind;
 
 public record SurveyCatalogResponse(List<Category> categories, List<Topic> topics) {
 

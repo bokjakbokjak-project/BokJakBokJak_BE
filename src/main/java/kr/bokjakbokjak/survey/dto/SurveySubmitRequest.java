@@ -1,4 +1,4 @@
-package kr.bokjakbokjak.survey;
+package kr.bokjakbokjak.survey.dto;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;

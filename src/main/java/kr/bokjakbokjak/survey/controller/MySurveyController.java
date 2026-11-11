@@ -1,10 +1,14 @@
-package kr.bokjakbokjak.survey;
+package kr.bokjakbokjak.survey.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.bokjakbokjak.common.ApiResponse;
 import kr.bokjakbokjak.common.SuccessCode;
+import kr.bokjakbokjak.survey.dto.MySurveyResponse;
+import kr.bokjakbokjak.survey.dto.SurveySubmitRequest;
+import kr.bokjakbokjak.survey.dto.SurveySubmitResponse;
+import kr.bokjakbokjak.survey.service.MySurveyService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;

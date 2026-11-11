@@ -1,4 +1,4 @@
-package kr.bokjakbokjak.survey;
+package kr.bokjakbokjak.survey.entity;
 
 public enum QuestionKind {
     /** 내 생활습관 */

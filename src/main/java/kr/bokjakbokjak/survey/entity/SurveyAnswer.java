@@ -1,4 +1,4 @@
-package kr.bokjakbokjak.survey;
+package kr.bokjakbokjak.survey.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -12,34 +12,34 @@ import java.io.Serializable;
 import java.util.Objects;
 import org.springframework.data.domain.Persistable;
 
-/** 사용자가 고른 생활습관 카테고리와 순위 (3~5개). */
+/** 사용자의 문항별 최신 답변. */
 @Entity
-@Table(name = "user_weight")
-public class UserWeight implements Persistable<UserWeight.Id> {
+@Table(name = "survey_answer")
+public class SurveyAnswer implements Persistable<SurveyAnswer.Id> {
     @EmbeddedId
     private Id id;
 
-    @Column(name = "priority_rank", nullable = false)
-    private int rank;
+    @Column(name = "option_code", nullable = false)
+    private String optionCode;
 
     // 저장할 때마다 전체를 지우고 새로 넣기 때문에, 새로 만든 객체는 merge 없이 바로 insert 한다
     @Transient
     private boolean isNew = true;
 
-    protected UserWeight() {
+    protected SurveyAnswer() {
     }
 
-    public UserWeight(Long userId, String categoryCode, int rank) {
-        this.id = new Id(userId, categoryCode);
-        this.rank = rank;
+    public SurveyAnswer(Long userId, String questionCode, String optionCode) {
+        this.id = new Id(userId, questionCode);
+        this.optionCode = optionCode;
     }
 
-    public String getCategoryCode() {
-        return id.categoryCode;
+    public String getQuestionCode() {
+        return id.questionCode;
     }
 
-    public int getRank() {
-        return rank;
+    public String getOptionCode() {
+        return optionCode;
     }
 
     @Override
@@ -63,27 +63,27 @@ public class UserWeight implements Persistable<UserWeight.Id> {
         @Column(name = "user_id")
         private Long userId;
 
-        @Column(name = "category_code")
-        private String categoryCode;
+        @Column(name = "question_code")
+        private String questionCode;
 
         protected Id() {
         }
 
-        Id(Long userId, String categoryCode) {
+        Id(Long userId, String questionCode) {
             this.userId = userId;
-            this.categoryCode = categoryCode;
+            this.questionCode = questionCode;
         }
 
         @Override
         public boolean equals(Object other) {
             return other instanceof Id that
                     && Objects.equals(userId, that.userId)
-                    && Objects.equals(categoryCode, that.categoryCode);
+                    && Objects.equals(questionCode, that.questionCode);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(userId, categoryCode);
+            return Objects.hash(userId, questionCode);
         }
     }
 }

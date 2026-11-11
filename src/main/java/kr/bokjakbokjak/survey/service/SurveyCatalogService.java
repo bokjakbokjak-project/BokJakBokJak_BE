@@ -1,8 +1,15 @@
-package kr.bokjakbokjak.survey;
+package kr.bokjakbokjak.survey.service;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import kr.bokjakbokjak.survey.dto.SurveyCatalogResponse;
+import kr.bokjakbokjak.survey.entity.Question;
+import kr.bokjakbokjak.survey.entity.QuestionOption;
+import kr.bokjakbokjak.survey.repository.QuestionOptionRepository;
+import kr.bokjakbokjak.survey.repository.QuestionRepository;
+import kr.bokjakbokjak.survey.repository.SurveyCategoryRepository;
+import kr.bokjakbokjak.survey.repository.SurveyTopicRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

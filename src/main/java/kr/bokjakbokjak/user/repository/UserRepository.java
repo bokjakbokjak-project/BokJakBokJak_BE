@@ -1,7 +1,8 @@
-package kr.bokjakbokjak.user;
+package kr.bokjakbokjak.user.repository;
 
 import jakarta.persistence.LockModeType;
 import java.util.Optional;
+import kr.bokjakbokjak.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;

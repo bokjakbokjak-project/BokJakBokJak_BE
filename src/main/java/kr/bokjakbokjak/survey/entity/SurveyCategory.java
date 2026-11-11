@@ -1,4 +1,4 @@
-package kr.bokjakbokjak.survey;
+package kr.bokjakbokjak.survey.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

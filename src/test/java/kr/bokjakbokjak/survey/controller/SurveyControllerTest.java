@@ -1,4 +1,4 @@
-package kr.bokjakbokjak.survey;
+package kr.bokjakbokjak.survey.controller;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.everyItem;

@@ -52,6 +52,21 @@ class AzureOpenAiLlmClientTest {
     }
 
     @Test
+    void ignoresPathAndQueryCopiedIntoEndpoint() {
+        RestClient.Builder builder = RestClient.builder();
+        MockRestServiceServer pathServer = MockRestServiceServer.bindTo(builder).build();
+        var properties = new AzureOpenAiProperties(
+                "https://bokjak-ai.openai.azure.com/openai/responses?api-version=2025-04-01-preview",
+                "test-key", "bokjak-chat", "2025-04-01-preview");
+        var pathClient = new AzureOpenAiLlmClient(properties, builder.build(), JsonMapper.builder().build());
+        pathServer.expect(requestTo(URL))
+                .andRespond(withSuccess(completion("stop", "{}"), MediaType.APPLICATION_JSON));
+
+        assertThat(pathClient.complete(REQUEST)).contains("{}");
+        pathServer.verify();
+    }
+
+    @Test
     void truncatedResponseIsUnusable() {
         server.expect(requestTo(URL))
                 .andRespond(withSuccess(completion("length", "{\\\"summary\\\":"), MediaType.APPLICATION_JSON));

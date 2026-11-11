@@ -1,5 +1,6 @@
 package kr.bokjakbokjak.ai;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -27,8 +28,7 @@ public class AzureOpenAiLlmClient implements LlmClient {
     public Optional<String> complete(LlmRequest request) {
         try {
             String response = restClient.post()
-                    .uri(properties.endpoint().replaceAll("/+$", "")
-                                    + "/openai/deployments/{deployment}/chat/completions?api-version={version}",
+                    .uri(baseUrl() + "/openai/deployments/{deployment}/chat/completions?api-version={version}",
                             properties.deployment(), properties.apiVersion())
                     .header("api-key", properties.apiKey())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -40,6 +40,11 @@ public class AzureOpenAiLlmClient implements LlmClient {
             log.warn("LLM request failed: {}", exception.getClass().getSimpleName());
             return Optional.empty();
         }
+    }
+
+    private String baseUrl() {
+        URI uri = URI.create(properties.endpoint().strip());
+        return uri.getScheme() + "://" + uri.getRawAuthority();
     }
 
     private Map<String, Object> body(LlmRequest request) {

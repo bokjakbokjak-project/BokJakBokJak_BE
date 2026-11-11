@@ -26,7 +26,9 @@ export JWT_SECRET_BASE64="$(openssl rand -base64 32)"
 - `SERVER_PORT`의 기본값은 `8080`, `JWT_ACCESS_TTL`의 기본값은 `30m`입니다.
 - `JWT_ISSUER`와 `JWT_AUDIENCE`의 기본값은 각각 `bokjakbokjak`, `bokjakbokjak-api`입니다.
 - `.env.example`은 변수 이름과 예시값만 담습니다. 실제 비밀번호와 JWT 키가 들어간 `.env`는 Git에서 제외됩니다.
-- 테이블은 Flyway가 관리합니다. 앱이 뜰 때 `src/main/resources/db/migration`의 SQL을 순서대로 적용하고, JPA `ddl-auto`는 `none`입니다. 스키마를 바꿀 때는 기존 파일을 고치지 말고 `V{다음번호}__설명.sql`을 새로 추가합니다.
+- 앱이 뜰 때 Flyway가 `src/main/resources/db/migration`의 SQL을 먼저 적용하고, 그다음 JPA `ddl-auto: update`가 마이그레이션에 없는 테이블을 만듭니다.
+  - 회원·설문·온보딩·기숙사 테이블은 Flyway로 관리합니다. 스키마를 바꿀 때는 기존 파일을 고치지 말고 `V{다음번호}__설명.sql`을 새로 추가합니다.
+  - 추천·채팅·조율 테이블은 엔티티 기준으로 `update`가 만듭니다. 같은 테이블을 Flyway와 엔티티 양쪽에서 만들지 않습니다.
 - 일반 `jar`는 비활성화하고 실행용 `bootJar`만 만듭니다.
 
 ## 공통 HTTP 계약
@@ -35,7 +37,7 @@ export JWT_SECRET_BASE64="$(openssl rand -base64 32)"
 
 JPA 엔티티가 생성·수정 시각이 필요하면 `BaseEntity`를 상속합니다. `created_at`과 `updated_at`은 JPA Auditing으로 기록됩니다.
 
-`GET /api/health`를 실행할 수 있습니다. 설문 문항은 `GET /api/surveys/current`로 조회합니다(로그인 필요). `POST /api/auth/login`은 Google 로그인 구현을 연결할 공개 경로로 설정했습니다. Google ID 토큰 검증, PostgreSQL 저장 및 실제 매칭 점수 계산은 후속 기능에서 구현합니다.
+`GET /api/health`를 실행할 수 있습니다. 설문 문항은 `GET /api/surveys/current`, 내 설문 응답은 `GET`·`PUT /api/me/survey`로 조회·저장합니다(로그인 필요). 설문 차수가 올라가면 `SurveyRevisionChangedEvent(userId, revision)`를 발행합니다. `POST /api/auth/login`은 Google 로그인 구현을 연결할 공개 경로로 설정했습니다. Google ID 토큰 검증, PostgreSQL 저장 및 실제 매칭 점수 계산은 후속 기능에서 구현합니다.
 
 ## 채희님 연동용 내부 메서드
 

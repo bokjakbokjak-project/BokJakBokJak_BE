@@ -10,7 +10,9 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: none
+      # Flyway(src/main/resources/db/migration)가 먼저 돌고, 마이그레이션에 없는 테이블만 JPA가 만든다.
+      # 같은 테이블을 양쪽에서 만들지 않는다.
+      ddl-auto: update
   data:
     redis:
       url: ${REDIS_URL:redis://localhost:6379}

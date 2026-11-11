@@ -49,9 +49,18 @@ B 모듈은 `kr.bokjakbokjak.matching`의 인터페이스를 생성자로 주입
 | `UserQueryService` | `getUserSummaries(List<Long> userIds)` | `List<UserSummaryDto>` |
 | `MatchingEngine` | `calculate(Long viewerId, Long targetId)` | `MatchResultDto` |
 
-샘플 구현을 쓰려면 `SPRING_PROFILES_ACTIVE=matching-fixture ./gradlew bootRun`으로 실행합니다. 기본 프로필에서는 샘플 구현을 등록하지 않습니다.
+기본 프로필에서는 `MatchingEngine`으로 실제 설문 답변을 계산하는 `SurveyMatchingEngine`이 등록됩니다. `UserQueryService` 실구현은 후보 조회 작업에서 추가할 예정입니다. 샘플 구현이 필요하면 `SPRING_PROFILES_ACTIVE=matching-fixture ./gradlew bootRun`으로 실행합니다.
+
+### 매칭 점수 계산
+
+- 주제마다 상대의 실제 습관이 내 허용범위 안이면 1점, 벗어나면 한 칸마다 0.25점씩 깎습니다(1 → 0.75 → 0.5 → 0.25 → 0). 주제별 구간은 `TopicRules`에 있습니다.
+- "잘 모르겠다", "일정하지 않다"는 0.5점, "조용하기만 하면 상관없다"처럼 조건부 허용은 1점으로 계산하고 라벨을 `NEED_CHECK`로 둡니다. 흡연은 조합표로 판정합니다.
+- 카테고리 가중치는 모두 기본 10점에 선택 순위 보너스(1~5순위 +12 / +6 / +2 / +1 / +0.5)를 더합니다. 한 카테고리에 주제가 여러 개면 가중치를 똑같이 나눕니다.
+- `viewerToTarget` = Σ(viewer 주제 가중치 × target 습관 점수) ÷ Σ(viewer 주제 가중치). 반대 방향도 같은 방식입니다.
+- `mutualScore`는 두 방향의 조화평균입니다. 둘 다 0이면 0입니다.
+- 주제 라벨은 한쪽이라도 허용범위를 벗어나면 `NEED_ADJUST`, 조건부·모름이 섞이면 `NEED_CHECK`, 나머지는 `GOOD`입니다.
 
 - 활성 사용자 `7`과 `12`는 서로 후보로 조회됩니다. 최종 매칭 완료 여부에 따른 추천 제외는 B에서 처리합니다.
 - `getUserSummaries`는 탈퇴 샘플 `99`도 `WITHDRAWN` 상태와 함께 반환합니다. 존재하지 않는 ID는 생략합니다.
 - `calculate`는 샘플 쌍 `7 ↔ 12`를 지원합니다. `calculate(7L, 12L)`는 두 방향 `0.85 / 0.79`와 상호 점수 `0.82`를 반환합니다. 이 값은 연동용 고정 예시이며 실제 매칭 산식의 결과가 아닙니다.
-- `viewerToTarget`는 **viewer의 허용 기준과 가중치**로 본 상대 점수입니다. 화면 퍼센트가 필요하면 B에서 100을 곱합니다. 실제 가중치와 합산식은 엔진 구현에서 확정합니다.
+- `viewerToTarget`는 **viewer의 허용 기준과 가중치**로 본 상대 점수입니다. 점수는 0~1이고, 화면 퍼센트가 필요하면 100을 곱합니다.

@@ -10,6 +10,7 @@ public enum ErrorCode {
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 요청 방식입니다."),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "지원하지 않는 데이터 형식입니다."),
     SURVEY_REVISION_CONFLICT(HttpStatus.CONFLICT, "최신 설문을 조회해주세요."),
+    ONBOARDING_REQUIRED(HttpStatus.CONFLICT, "온보딩을 먼저 완료해주세요."),
     RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "잠시 후 다시 시도해주세요."),
     HTTP_ERROR(HttpStatus.BAD_REQUEST, "요청을 처리할 수 없습니다."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "요청을 처리할 수 없습니다.");

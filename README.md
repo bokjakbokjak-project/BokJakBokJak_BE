@@ -48,8 +48,17 @@ B 모듈은 `kr.bokjakbokjak.matching`의 인터페이스를 생성자로 주입
 | `UserQueryService` | `findCandidates(Long viewerId)` | `List<CandidateDto>` |
 | `UserQueryService` | `getUserSummaries(List<Long> userIds)` | `List<UserSummaryDto>` |
 | `MatchingEngine` | `calculate(Long viewerId, Long targetId)` | `MatchResultDto` |
+| `SurveyProfileQueryService` | `getSurveyProfile(Long userId)` | `SurveyProfileDto` |
 
 기본 프로필에서는 `MatchingEngine`으로 실제 설문 답변을 계산하는 `SurveyMatchingEngine`이 등록됩니다. `UserQueryService` 실구현은 후보 조회 작업에서 추가할 예정입니다. 샘플 구현이 필요하면 `SPRING_PROFILES_ACTIVE=matching-fixture ./gradlew bootRun`으로 실행합니다.
+
+### AI 요약용 설문 프로필
+
+- `getSurveyProfile`은 설문을 완료한 사용자의 최신 설문 내용을 돌려줍니다. 후보 조회 실구현과 관계없이 기본 프로필에서 바로 사용할 수 있습니다.
+- `topCategories`는 선택한 카테고리 중 1~3순위, `topics`는 주제 8개를 설문 순서대로 담습니다.
+- 주제마다 상황문구, 내 습관 질문·답변, 허용범위 질문·답변을 담습니다. 답변은 선택지 코드가 아니라 문구라서 프롬프트에 그대로 넣을 수 있습니다.
+- `surveyRevision`이 바뀌었을 때만 요약을 다시 만들면 됩니다. 설문이 바뀌면 `SurveyRevisionChangedEvent`도 발행됩니다.
+- 없는 사용자나 설문을 완료하지 않은 사용자는 `IllegalArgumentException`을 던집니다.
 
 ### 매칭 점수 계산
 

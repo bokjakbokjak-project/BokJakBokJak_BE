@@ -44,6 +44,16 @@ public class LifestyleSummary extends BaseEntity {
         return new LifestyleSummary(userId, surveyRevision, summary, keywords);
     }
 
+    public boolean isFor(int surveyRevision) {
+        return this.surveyRevision == surveyRevision;
+    }
+
+    public void refresh(int surveyRevision, String summary, String keywords) {
+        this.surveyRevision = surveyRevision;
+        this.summary = summary;
+        this.keywords = keywords;
+    }
+
     public Long getId() {
         return id;
     }

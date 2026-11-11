@@ -91,6 +91,14 @@ public class Matching extends BaseEntity {
         return new Matching(requesterId, receiverId, requesterSurveyRevision, receiverSurveyRevision);
     }
 
+    public boolean isParticipant(Long userId) {
+        return requesterId.equals(userId) || receiverId.equals(userId);
+    }
+
+    public boolean isChatting() {
+        return status == MatchingStatus.CHATTING;
+    }
+
     public Long getId() {
         return id;
     }

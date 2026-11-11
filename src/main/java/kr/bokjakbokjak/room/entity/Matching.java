@@ -99,6 +99,10 @@ public class Matching extends BaseEntity {
         return status == MatchingStatus.CHATTING;
     }
 
+    public boolean isEnded() {
+        return status == MatchingStatus.ENDED;
+    }
+
     public Long getId() {
         return id;
     }

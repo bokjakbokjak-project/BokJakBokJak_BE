@@ -25,6 +25,11 @@ export JWT_SECRET_BASE64="$(openssl rand -base64 32)"
 - `CORS_ALLOWED_ORIGINS`는 허용할 FE 주소를 쉼표로 구분합니다. 로컬 기본값은 `http://localhost:5173`입니다.
 - `SERVER_PORT`의 기본값은 `8080`, `JWT_ACCESS_TTL`의 기본값은 `30m`입니다.
 - `JWT_ISSUER`와 `JWT_AUDIENCE`의 기본값은 각각 `bokjakbokjak`, `bokjakbokjak-api`입니다.
+- `GOOGLE_CLIENT_ID`는 Google 로그인에 쓰는 OAuth 웹 클라이언트 ID입니다. ID 토큰의 대상(`aud`)이 이 값과 같아야 로그인됩니다. 비어 있으면 Google 로그인은 모두 실패합니다.
+- `JWT_REFRESH_TTL`은 리프레시 토큰 유효 기간이며 기본값은 `14d`입니다. 리프레시 토큰은 Redis에 저장합니다.
+- `DEV_LOGIN_KEY`는 테스트 로그인 키입니다. 비어 있으면 테스트 로그인 API가 꺼집니다(404).
+- `MATCHING_CANDIDATE_SCOPE`는 추천 후보 범위입니다. 기본값 `ROOM_TYPE`은 같은 기숙사·같은 방 타입만, `DORMITORY`는 같은 기숙사면 방 타입이 달라도 후보로 봅니다.
+- `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION`은 AI 요약·분석·안건 생성에 쓰는 Azure OpenAI 설정입니다. 하나라도 비어 있으면 AI를 호출하지 않고 설문 답변 기반의 기본 문구로 동작하므로, 로컬 실행과 테스트에는 없어도 됩니다.
 - `.env.example`은 변수 이름과 예시값만 담습니다. 실제 비밀번호와 JWT 키가 들어간 `.env`는 Git에서 제외됩니다.
 - 앱이 뜰 때 Flyway가 `src/main/resources/db/migration`의 SQL을 먼저 적용하고, 그다음 JPA `ddl-auto: update`가 마이그레이션에 없는 테이블을 만듭니다.
   - 회원·설문·온보딩·기숙사 테이블은 Flyway로 관리합니다. 스키마를 바꿀 때는 기존 파일을 고치지 말고 `V{다음번호}__설명.sql`을 새로 추가합니다.
@@ -39,6 +44,25 @@ JPA 엔티티가 생성·수정 시각이 필요하면 `BaseEntity`를 상속합
 
 `GET /api/health`를 실행할 수 있습니다. 설문 문항은 `GET /api/surveys/current`, 내 설문 응답은 `GET`·`PUT /api/me/survey`로 조회·저장합니다(로그인 필요). 설문 차수가 올라가면 `SurveyRevisionChangedEvent(userId, revision)`를 발행합니다. `POST /api/auth/login`은 Google 로그인 구현을 연결할 공개 경로로 설정했습니다. Google ID 토큰 검증, PostgreSQL 저장 및 실제 매칭 점수 계산은 후속 기능에서 구현합니다.
 
+## 로그인과 토큰
+
+- `POST /api/auth/login`: FE가 Google Identity Services에서 받은 ID 토큰(`id_token`)을 보내면 서명·발급자·대상(`GOOGLE_CLIENT_ID`)·만료를 검증하고 서비스 토큰을 발급합니다. 처음 로그인하면 회원을 만듭니다.
+  - 학교 Google Workspace 계정만 받습니다. ID 토큰의 `hd`가 있어야 하고, `hd`나 이메일 도메인 중 하나가 `university_domain`에 등록된 학교여야 합니다. 학교 추가는 SQL로 도메인만 넣으면 됩니다.
+  - 응답의 `next_step`은 온보딩 전 `ONBOARDING`, 설문 전 `SURVEY`, 둘 다 마치면 `HOME`입니다.
+- 액세스 토큰은 30분, 리프레시 토큰은 14일입니다. `POST /api/auth/refresh`로 두 토큰을 모두 새로 받고, 쓴 리프레시 토큰은 바로 폐기됩니다.
+- `POST /api/auth/logout`은 현재 액세스 토큰을 남은 시간 동안 차단하고 리프레시 토큰을 지웁니다.
+- `POST /api/auth/dev-login`은 개발·시연용입니다. `X-Dev-Login-Key` 헤더가 `DEV_LOGIN_KEY`와 같고 대상이 테스트 유저일 때만 토큰을 줍니다. 아래 테스트 유저 표의 회원 ID로 로그인합니다.
+- 테스트에서는 Redis 대신 메모리 저장소(`InMemoryAuthTokenStore`)를 씁니다.
+
+## 온보딩과 기숙사
+
+- `PUT /api/me/onboarding`은 학과·학번·이름(닉네임)·성별·출생년도·방 타입·카테고리 순위를 한 번에 저장합니다. 회원 정보와 순위는 한 트랜잭션으로 바뀝니다.
+  - 방 타입은 본인 학교 것이어야 하고, MVP에서는 2인실만 고를 수 있습니다.
+  - 카테고리 순위 규칙은 설문 제출과 같습니다(`CategoryPriorityValidator`).
+  - 첫 설문 제출 전에는 다시 저장할 수 있고, 제출 후에는 409입니다. 저장하면 `next_step`이 `SURVEY`가 됩니다.
+- `GET /api/dormitories?keyword=`는 본인 학교 기숙사를 이름으로 검색해 기숙사별로 방 타입을 묶어 돌려줍니다. 2인실만, 이름순 최대 30개입니다.
+- `POST /api/dormitories`는 검색에 없는 기숙사·방 타입을 등록합니다. 이름의 공백을 빼고 비교해서 같은 태그면 기존 `room_type_id`를 돌려줍니다.
+
 ## 채희님 연동용 내부 메서드
 
 B 모듈은 `kr.bokjakbokjak.matching`의 인터페이스를 생성자로 주입받습니다.
@@ -50,7 +74,35 @@ B 모듈은 `kr.bokjakbokjak.matching`의 인터페이스를 생성자로 주입
 | `MatchingEngine` | `calculate(Long viewerId, Long targetId)` | `MatchResultDto` |
 | `SurveyProfileQueryService` | `getSurveyProfile(Long userId)` | `SurveyProfileDto` |
 
-기본 프로필에서는 `MatchingEngine`으로 실제 설문 답변을 계산하는 `SurveyMatchingEngine`이 등록됩니다. `UserQueryService` 실구현은 후보 조회 작업에서 추가할 예정입니다. 샘플 구현이 필요하면 `SPRING_PROFILES_ACTIVE=matching-fixture ./gradlew bootRun`으로 실행합니다.
+기본 프로필에서는 `MatchingEngine`으로 실제 설문 답변을 계산하는 `SurveyMatchingEngine`이 등록됩니다. `UserQueryService`는 실제 회원 데이터로 조회하는 `UserQueryServiceImpl`이 등록됩니다. 샘플 구현이 필요하면 `SPRING_PROFILES_ACTIVE=matching-fixture ./gradlew bootRun`으로 실행합니다.
+
+### 추천 후보와 사용자 요약
+
+- `findCandidates`는 조회한 사람과 같은 학교·같은 성별·같은 기숙사 방 타입이고, 온보딩과 설문을 마친 활성 회원을 돌려줍니다. 본인은 빠집니다. 최종 매칭 완료자 제외와 정렬은 B에서 처리합니다.
+- 조회한 사람이 비활성이거나 기숙사 정보·설문이 비어 있으면 빈 목록입니다. 없는 사용자는 `IllegalArgumentException`을 던집니다.
+- `getUserSummaries`는 요청한 순서대로 중복 없이 돌려줍니다. 탈퇴 회원도 `WITHDRAWN` 상태로 포함하고, 없는 ID는 생략합니다.
+- `topCategories`는 1~3순위 카테고리 코드입니다. `entryYear`는 학번 앞 4자리입니다.
+- `birthYear`로 나이를 보여줄 때는 한국식 나이(올해 − 출생년도 + 1)를 씁니다. 2026년에 2007년생은 20세입니다.
+- 회원 상태는 `ACTIVE`, `WITHDRAWN`(탈퇴), `SUSPENDED`(이용 제한)입니다. 탈퇴해도 행은 지우지 않고 상태만 바꿉니다.
+
+### 테스트 유저
+
+Flyway(`V6__insert_test_personas.sql`)로 시연·연동용 페르소나 13명을 넣습니다. 모두 동국대 회원이고 온보딩과 설문을 마친 상태이며 `test_user = TRUE`로 표시됩니다. ID는 환경마다 다를 수 있으니 닉네임으로 조회합니다.
+
+| 닉네임 | 확인용 |
+| --- | --- |
+| 책갈피 | 시연 기준 계정. 흡연자와 같은 방 불가 |
+| 깔끔이 | 청결 기준이 엄격함 |
+| 털털이 | 허용 범위는 넓지만 습관이 느슨함 |
+| 아침햇살 / 새벽감성 | 아침형과 올빼미, 수면 영역 충돌 |
+| 연기한줄 | 실외 흡연자. 후보에는 나오고 점수만 낮아짐 |
+| 드르렁 | 잠버릇이 잦음 |
+| 무난이 | 대부분과 점수가 높음 |
+| 갸우뚱 | 잘 모르겠다·불규칙 응답 (확인 필요 라벨) |
+| 금연중 | 기숙사에서는 금연 예정 |
+| 민트초코 | 남성. 여성 회원의 후보에 나오면 안 됨 |
+| 옆동주민 | 다른 기숙사(고양학사). 책갈피의 후보에 나오면 안 됨 |
+| 옆방타입 | 같은 기숙사·다른 방 타입. 책갈피의 후보에 나오면 안 됨 |
 
 ### AI 요약용 설문 프로필
 

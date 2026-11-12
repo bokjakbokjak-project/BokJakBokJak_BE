@@ -2,7 +2,6 @@ package kr.bokjakbokjak.survey.service;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,12 +15,10 @@ import kr.bokjakbokjak.survey.dto.SurveySubmitResponse;
 import kr.bokjakbokjak.survey.entity.Question;
 import kr.bokjakbokjak.survey.entity.QuestionOption;
 import kr.bokjakbokjak.survey.entity.SurveyAnswer;
-import kr.bokjakbokjak.survey.entity.SurveyCategory;
 import kr.bokjakbokjak.survey.entity.UserWeight;
 import kr.bokjakbokjak.survey.repository.QuestionOptionRepository;
 import kr.bokjakbokjak.survey.repository.QuestionRepository;
 import kr.bokjakbokjak.survey.repository.SurveyAnswerRepository;
-import kr.bokjakbokjak.survey.repository.SurveyCategoryRepository;
 import kr.bokjakbokjak.survey.repository.UserWeightRepository;
 import kr.bokjakbokjak.user.entity.User;
 import kr.bokjakbokjak.user.repository.UserRepository;
@@ -31,16 +28,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MySurveyService {
-    private static final int MIN_PRIORITIES = 3;
-    private static final int MAX_PRIORITIES = 5;
-    private static final String PRIORITIES_MESSAGE = "서로 다른 카테고리를 3~5개 선택하고 1순위부터 연속으로 지정해주세요.";
     private static final String ANSWERS_MESSAGE = "필수 문항을 모두 제출해주세요.";
     private static final String OPTION_MESSAGE = "문항에 없는 선택지입니다.";
 
     private final UserRepository userRepository;
     private final UserWeightRepository weightRepository;
     private final SurveyAnswerRepository answerRepository;
-    private final SurveyCategoryRepository categoryRepository;
+    private final CategoryPriorityValidator priorityValidator;
     private final QuestionRepository questionRepository;
     private final QuestionOptionRepository optionRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -49,14 +43,14 @@ public class MySurveyService {
             UserRepository userRepository,
             UserWeightRepository weightRepository,
             SurveyAnswerRepository answerRepository,
-            SurveyCategoryRepository categoryRepository,
+            CategoryPriorityValidator priorityValidator,
             QuestionRepository questionRepository,
             QuestionOptionRepository optionRepository,
             ApplicationEventPublisher eventPublisher) {
         this.userRepository = userRepository;
         this.weightRepository = weightRepository;
         this.answerRepository = answerRepository;
-        this.categoryRepository = categoryRepository;
+        this.priorityValidator = priorityValidator;
         this.questionRepository = questionRepository;
         this.optionRepository = optionRepository;
         this.eventPublisher = eventPublisher;
@@ -89,7 +83,7 @@ public class MySurveyService {
 
     @Transactional
     public SurveySubmitResponse submit(Long userId, SurveySubmitRequest request) {
-        Map<String, Integer> priorities = validatePriorities(request.priorities());
+        Map<String, Integer> priorities = priorityValidator.validate(request.priorities());
         Map<String, String> answers = validateAnswers(request.answers());
 
         User user = userRepository.findByIdForUpdate(userId)
@@ -124,28 +118,6 @@ public class MySurveyService {
         int revision = user.completeSurvey(Instant.now());
         eventPublisher.publishEvent(new SurveyRevisionChangedEvent(userId, revision));
         return toResponse(user);
-    }
-
-    private Map<String, Integer> validatePriorities(List<SurveySubmitRequest.Priority> priorities) {
-        Set<String> categoryCodes = categoryRepository.findAll().stream()
-                .map(SurveyCategory::getCode)
-                .collect(Collectors.toSet());
-
-        if (priorities.size() < MIN_PRIORITIES || priorities.size() > MAX_PRIORITIES) {
-            throw invalid("priorities", PRIORITIES_MESSAGE);
-        }
-        Map<String, Integer> rankByCategory = new HashMap<>();
-        Set<Integer> ranks = new HashSet<>();
-        for (SurveySubmitRequest.Priority priority : priorities) {
-            if (priority == null || priority.categoryCode() == null || priority.rank() == null
-                    || !categoryCodes.contains(priority.categoryCode())
-                    || priority.rank() < 1 || priority.rank() > priorities.size()
-                    || !ranks.add(priority.rank())
-                    || rankByCategory.putIfAbsent(priority.categoryCode(), priority.rank()) != null) {
-                throw invalid("priorities", PRIORITIES_MESSAGE);
-            }
-        }
-        return rankByCategory;
     }
 
     private Map<String, String> validateAnswers(List<SurveySubmitRequest.Answer> answers) {

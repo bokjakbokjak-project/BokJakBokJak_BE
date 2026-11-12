@@ -5,6 +5,12 @@ public enum SuccessCode {
     SURVEY_SCHEMA_SUCCESS("설문 문항을 조회했습니다."),
     SURVEY_SAVE_SUCCESS("설문을 저장했습니다."),
     MY_SURVEY_SUCCESS("내 설문 응답을 조회했습니다."),
+    LOGIN_SUCCESS("로그인했습니다."),
+    TOKEN_REFRESH_SUCCESS("토큰을 재발급했습니다."),
+    LOGOUT_SUCCESS("로그아웃했습니다."),
+    ONBOARDING_SAVE_SUCCESS("온보딩 정보를 저장했습니다."),
+    DORMITORY_LIST_SUCCESS("기숙사와 방 타입을 조회했습니다."),
+    DORMITORY_TAG_READY("기숙사와 방 타입을 선택할 수 있습니다."),
 
     RECOMMENDATION_LIST_SUCCESS("추천 리스트를 조회했습니다."),
     RECOMMENDATION_REFRESH_SUCCESS("추천 리스트를 새로고침했습니다."),

@@ -14,6 +14,8 @@ public interface AgendaRepository extends JpaRepository<Agenda, Long> {
 
     Optional<Agenda> findByIdAndMatchingId(Long id, Long matchingId);
 
+    boolean existsByMatchingId(Long matchingId);
+
     Optional<Agenda> findFirstByMatchingIdAndStatus(Long matchingId, AgendaStatus status);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

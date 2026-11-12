@@ -34,7 +34,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.agenda.auto-prepare=true")
 @ActiveProfiles("test")
 class AgendaPreparationTest {
     private static final long BOOKMARK = 7L;

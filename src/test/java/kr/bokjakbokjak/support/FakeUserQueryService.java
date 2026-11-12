@@ -8,9 +8,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import kr.bokjakbokjak.matching.CandidateDto;
 import kr.bokjakbokjak.matching.UserQueryService;
 import kr.bokjakbokjak.matching.UserSummaryDto;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+/** 테스트 프로필에서는 실구현(UserQueryServiceImpl)보다 이 가짜 구현을 우선 주입한다. */
+@Primary
 @Component
 @Profile("test")
 public class FakeUserQueryService implements UserQueryService {
@@ -21,13 +24,13 @@ public class FakeUserQueryService implements UserQueryService {
     private final Map<Long, Set<Long>> candidates = new ConcurrentHashMap<>();
 
     public void addUser(long userId, String nickname, int surveyRevision) {
-        users.put(userId, new UserSummaryDto(userId, nickname, "컴퓨터공학과", ACTIVE, surveyRevision,
+        users.put(userId, new UserSummaryDto(userId, nickname, "컴퓨터공학과", 2005, ACTIVE, surveyRevision,
                 List.of("CLEANING", "SLEEP_SCHEDULE", "SMOKING")));
     }
 
     public void withdraw(long userId) {
         UserSummaryDto user = users.get(userId);
-        users.put(userId, new UserSummaryDto(userId, user.nickname(), user.department(), WITHDRAWN,
+        users.put(userId, new UserSummaryDto(userId, user.nickname(), user.department(), user.birthYear(), WITHDRAWN,
                 user.surveyRevision(), user.topCategories()));
     }
 
@@ -49,7 +52,7 @@ public class FakeUserQueryService implements UserQueryService {
                 .filter(Objects::nonNull)
                 .filter(user -> ACTIVE.equals(user.status()) && user.surveyRevision() > 0)
                 .map(user -> new CandidateDto(user.userId(), user.nickname(), user.department(), 2024,
-                        user.topCategories()))
+                        user.birthYear(), user.topCategories()))
                 .toList();
     }
 

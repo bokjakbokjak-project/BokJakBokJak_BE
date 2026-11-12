@@ -66,6 +66,20 @@ public class Agenda extends BaseEntity {
         return new Agenda(matchingId, seq, topicCode, title, content, status);
     }
 
+    public void start() {
+        if (status == AgendaStatus.WAITING) {
+            status = AgendaStatus.DISCUSSING;
+        }
+    }
+
+    public boolean isWaiting() {
+        return status == AgendaStatus.WAITING;
+    }
+
+    public boolean isDecided() {
+        return status == AgendaStatus.DECIDED;
+    }
+
     public Long getId() {
         return id;
     }

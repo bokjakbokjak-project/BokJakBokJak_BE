@@ -105,6 +105,16 @@ public class Matching extends BaseEntity {
         throw new IllegalArgumentException("Not a participant: " + userId);
     }
 
+    public boolean isConfirmedBy(Long userId) {
+        if (requesterId.equals(userId)) {
+            return requesterConfirmed;
+        }
+        if (receiverId.equals(userId)) {
+            return receiverConfirmed;
+        }
+        throw new IllegalArgumentException("Not a participant: " + userId);
+    }
+
     public boolean isChatting() {
         return status == MatchingStatus.CHATTING;
     }

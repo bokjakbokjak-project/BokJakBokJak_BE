@@ -8,9 +8,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import kr.bokjakbokjak.matching.UserSummaryDto;
 import kr.bokjakbokjak.room.dto.ChatRoomListResponse;
+import kr.bokjakbokjak.room.dto.ChatRoomResponse;
 import kr.bokjakbokjak.room.entity.ChatMessage;
 import kr.bokjakbokjak.room.entity.Matching;
 import kr.bokjakbokjak.room.entity.MatchingStatus;
+import kr.bokjakbokjak.room.repository.AgendaRepository;
 import kr.bokjakbokjak.room.repository.ChatMessageRepository;
 import kr.bokjakbokjak.room.repository.MatchingRepository;
 import org.springframework.stereotype.Service;
@@ -22,12 +24,17 @@ public class ChatRoomService {
             MatchingStatus.CONFIRMED);
 
     private final MatchingRepository matchingRepository;
+    private final MatchingReader matchingReader;
+    private final AgendaRepository agendaRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatPartnerReader partnerReader;
 
-    ChatRoomService(MatchingRepository matchingRepository, ChatMessageRepository chatMessageRepository,
+    ChatRoomService(MatchingRepository matchingRepository, MatchingReader matchingReader,
+            AgendaRepository agendaRepository, ChatMessageRepository chatMessageRepository,
             ChatPartnerReader partnerReader) {
         this.matchingRepository = matchingRepository;
+        this.matchingReader = matchingReader;
+        this.agendaRepository = agendaRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.partnerReader = partnerReader;
     }
@@ -52,6 +59,24 @@ public class ChatRoomService {
                         lastMessages.get(matching.getId())))
                 .toList();
         return new ChatRoomListResponse(rooms);
+    }
+
+    @Transactional(readOnly = true)
+    public ChatRoomResponse getRoom(Long userId, Long matchingId) {
+        Matching matching = matchingReader.getParticipating(matchingId, userId);
+        Long partnerId = matching.partnerOf(userId);
+        List<ChatRoomResponse.AgendaItem> agendas = agendaRepository.findAllByMatchingIdOrderBySeqAsc(matchingId)
+                .stream()
+                .map(ChatRoomResponse.AgendaItem::from)
+                .toList();
+        return new ChatRoomResponse(
+                matching.getId(),
+                matching.getStatus(),
+                matching.getEndReason(),
+                ChatRoomResponse.Partner.from(partnerReader.read(partnerId)),
+                agendas,
+                matching.isConfirmedBy(userId),
+                matching.isConfirmedBy(partnerId));
     }
 
     private static Instant lastActivityAt(Matching matching, Map<Long, ChatMessage> lastMessages) {

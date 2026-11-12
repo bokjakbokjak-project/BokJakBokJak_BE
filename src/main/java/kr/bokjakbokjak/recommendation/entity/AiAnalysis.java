@@ -59,6 +59,19 @@ public class AiAnalysis extends BaseEntity {
                 goodPoints, adjustPoints, checkPoints);
     }
 
+    public boolean isFor(int viewerSurveyRevision, int targetSurveyRevision) {
+        return this.viewerSurveyRevision == viewerSurveyRevision && this.targetSurveyRevision == targetSurveyRevision;
+    }
+
+    public void refresh(int viewerSurveyRevision, int targetSurveyRevision, String goodPoints, String adjustPoints,
+            String checkPoints) {
+        this.viewerSurveyRevision = viewerSurveyRevision;
+        this.targetSurveyRevision = targetSurveyRevision;
+        this.goodPoints = goodPoints;
+        this.adjustPoints = adjustPoints;
+        this.checkPoints = checkPoints;
+    }
+
     public Long getId() {
         return id;
     }

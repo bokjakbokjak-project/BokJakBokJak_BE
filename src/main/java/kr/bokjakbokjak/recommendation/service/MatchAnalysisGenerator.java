@@ -32,7 +32,7 @@ class MatchAnalysisGenerator {
 
     GeneratedMatchAnalysis generate(List<MatchItemDto> items) {
         if (items.isEmpty()) {
-            return new GeneratedMatchAnalysis(List.of(), List.of(), List.of());
+            return new GeneratedMatchAnalysis(List.of(), List.of(), List.of(), false);
         }
         LlmRequest request = new LlmRequest(MatchAnalysisPrompt.SYSTEM, MatchAnalysisPrompt.userInput(items),
                 ReasoningEffort.LOW, MAX_COMPLETION_TOKENS);
@@ -41,11 +41,12 @@ class MatchAnalysisGenerator {
                     .flatMap(raw -> jsonParser.parse(raw, LlmOutput.class))
                     .flatMap(output -> validate(output, items));
             if (sentences.isPresent()) {
-                return classify(items, sentences.get());
+                return classify(items, sentences.get(), true);
             }
         }
         return classify(items, items.stream()
-                .collect(Collectors.toMap(MatchItemDto::topicCode, DefaultMatchSentences::of, (first, second) -> first)));
+                .collect(Collectors.toMap(MatchItemDto::topicCode, DefaultMatchSentences::of, (first, second) -> first)),
+                false);
     }
 
     private static Optional<Map<String, String>> validate(LlmOutput output, List<MatchItemDto> items) {
@@ -67,14 +68,15 @@ class MatchAnalysisGenerator {
         return stripped.codePointCount(0, stripped.length()) <= MAX_SENTENCE_LENGTH;
     }
 
-    private static GeneratedMatchAnalysis classify(List<MatchItemDto> items, Map<String, String> sentences) {
+    private static GeneratedMatchAnalysis classify(List<MatchItemDto> items, Map<String, String> sentences,
+            boolean aiGenerated) {
         Map<MatchLabel, List<String>> byLabel = items.stream()
                 .sorted(VIEWER_PRIORITY)
                 .collect(Collectors.groupingBy(MatchItemDto::label,
                         Collectors.mapping(item -> sentences.get(item.topicCode()), Collectors.toList())));
         Function<MatchLabel, List<String>> section = label -> byLabel.getOrDefault(label, List.of());
         return new GeneratedMatchAnalysis(section.apply(MatchLabel.GOOD), section.apply(MatchLabel.NEED_ADJUST),
-                section.apply(MatchLabel.NEED_CHECK));
+                section.apply(MatchLabel.NEED_CHECK), aiGenerated);
     }
 
     record LlmOutput(List<Item> items) {

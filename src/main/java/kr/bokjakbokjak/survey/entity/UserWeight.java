@@ -34,6 +34,10 @@ public class UserWeight implements Persistable<UserWeight.Id> {
         this.rank = rank;
     }
 
+    public Long getUserId() {
+        return id.userId;
+    }
+
     public String getCategoryCode() {
         return id.categoryCode;
     }

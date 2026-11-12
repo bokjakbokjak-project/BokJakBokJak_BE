@@ -34,6 +34,6 @@ class ChatPartnerReader {
     }
 
     private static UserSummaryDto unknown(Long userId) {
-        return new UserSummaryDto(userId, UNKNOWN_NICKNAME, null, null, 0, List.of());
+        return new UserSummaryDto(userId, UNKNOWN_NICKNAME, null, null, null, 0, List.of());
     }
 }

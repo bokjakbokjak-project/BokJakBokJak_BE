@@ -11,6 +11,9 @@ public enum SuccessCode {
     ONBOARDING_SAVE_SUCCESS("온보딩 정보를 저장했습니다."),
     DORMITORY_LIST_SUCCESS("기숙사와 방 타입을 조회했습니다."),
     DORMITORY_TAG_READY("기숙사와 방 타입을 선택할 수 있습니다."),
+    MY_PROFILE_SUCCESS("내 성향 프로필을 조회했습니다."),
+    ROOMMATE_PROFILE_SUCCESS("상대 프로필을 조회했습니다."),
+    NICKNAME_UPDATE_SUCCESS("닉네임을 변경했습니다."),
 
     RECOMMENDATION_LIST_SUCCESS("추천 리스트를 조회했습니다."),
     RECOMMENDATION_REFRESH_SUCCESS("추천 리스트를 새로고침했습니다."),

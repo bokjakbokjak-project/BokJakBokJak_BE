@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.ActiveProfiles;
@@ -48,6 +49,7 @@ class ChatRequestServiceTest {
     @Autowired MatchingRepository matchingRepository;
     @Autowired NotificationRepository notificationRepository;
     @Autowired JdbcClient jdbc;
+    @Autowired ApplicationContext context;
     @Autowired ApplicationEvents events;
 
     @DynamicPropertySource
@@ -93,6 +95,11 @@ class ChatRequestServiceTest {
         });
         assertThat(events.stream(ChatStartedEvent.class))
                 .containsExactly(new ChatStartedEvent(response.matchingId()));
+    }
+
+    @Test
+    void agendaPreparationIsOffInTests() {
+        assertThat(context.getBeanNamesForType(AgendaPreparationListener.class)).isEmpty();
     }
 
     @Test

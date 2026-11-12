@@ -6,12 +6,14 @@ import kr.bokjakbokjak.room.event.ChatStartedEvent;
 import kr.bokjakbokjak.room.repository.MatchingRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
+@ConditionalOnBooleanProperty(name = "app.agenda.auto-prepare", matchIfMissing = true)
 class AgendaPreparationListener {
     private static final Logger log = LoggerFactory.getLogger(AgendaPreparationListener.class);
 

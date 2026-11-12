@@ -99,6 +99,29 @@ class RecommendationControllerTest {
     }
 
     @Test
+    void showsMatchAnalysis() throws Exception {
+        mvc.perform(authorized(get("/api/recommendations/" + MINT + "/analysis"), VIEWER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("MATCH_ANALYSIS_SUCCESS"))
+                .andExpect(jsonPath("$.data.target.user_id").value(MINT))
+                .andExpect(jsonPath("$.data.target.nickname").value("민트초코"))
+                .andExpect(jsonPath("$.data.target.age").isNumber())
+                .andExpect(jsonPath("$.data.target.top_categories").isArray())
+                .andExpect(jsonPath("$.data.match_score").value(82))
+                .andExpect(jsonPath("$.data.good_points").isArray())
+                .andExpect(jsonPath("$.data.adjust_points").isArray())
+                .andExpect(jsonPath("$.data.check_points").isArray())
+                .andExpect(jsonPath("$.data.analyzed_at").exists());
+    }
+
+    @Test
+    void analysisOfMissingTargetIsNotFound() throws Exception {
+        mvc.perform(authorized(get("/api/recommendations/999/analysis"), VIEWER))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("TARGET_WITHDRAWN"));
+    }
+
+    @Test
     void viewerWithoutSurveyIsConflict() throws Exception {
         users.addUser(VIEWER, "책갈피", 0);
 

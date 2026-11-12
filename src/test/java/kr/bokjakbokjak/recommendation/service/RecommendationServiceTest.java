@@ -7,6 +7,8 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 
 import java.math.BigDecimal;
+import java.time.Year;
+import java.time.ZoneId;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -98,7 +100,7 @@ class RecommendationServiceTest {
         assertThat(response.recommendations().getFirst()).satisfies(item -> {
             assertThat(item.nickname()).isEqualTo("후보14");
             assertThat(item.department()).isEqualTo("컴퓨터공학과");
-            assertThat(item.age()).isNull();
+            assertThat(item.age()).isEqualTo(Year.now(ZoneId.of("Asia/Seoul")).getValue() - 2005 + 1);
             assertThat(item.topCategories()).containsExactly("CLEANING", "SLEEP_SCHEDULE", "SMOKING");
         });
     }
@@ -150,6 +152,14 @@ class RecommendationServiceTest {
 
         assertThat(exception.code()).isEqualTo("ONBOARDING_REQUIRED");
         assertThat(exception.status()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void unknownViewerIsAskedToOnboard() {
+        ApiException exception = assertThrows(ApiException.class,
+                () -> recommendationService.refresh(999L));
+
+        assertThat(exception.code()).isEqualTo("ONBOARDING_REQUIRED");
     }
 
     private Long start(long requesterId, long receiverId) {

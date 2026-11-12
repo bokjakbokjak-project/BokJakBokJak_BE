@@ -80,6 +80,7 @@ class RecommendationControllerTest {
                 .andExpect(jsonPath("$.data.recommendations[0].user_id").value(MINT))
                 .andExpect(jsonPath("$.data.recommendations[0].nickname").value("민트초코"))
                 .andExpect(jsonPath("$.data.recommendations[0].department").value("컴퓨터공학과"))
+                .andExpect(jsonPath("$.data.recommendations[0].age").isNumber())
                 .andExpect(jsonPath("$.data.recommendations[0].top_categories").isArray())
                 .andExpect(jsonPath("$.data.recommendations[0].match_score").value(82))
                 .andExpect(jsonPath("$.data.recommendations[0].relation").value("NONE"));

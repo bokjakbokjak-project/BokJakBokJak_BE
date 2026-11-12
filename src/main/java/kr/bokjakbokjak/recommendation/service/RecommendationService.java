@@ -1,5 +1,6 @@
 package kr.bokjakbokjak.recommendation.service;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,19 +47,13 @@ public class RecommendationService {
     }
 
     private Recommendations recommend(Long viewerId, boolean recalculateAll) {
+        UserSummaryDto viewer = userQueryService.getUserSummaries(List.of(viewerId)).stream()
+                .filter(user -> user.userId().equals(viewerId))
+                .findFirst()
+                .filter(user -> user.surveyRevision() > 0)
+                .orElseThrow(() -> new ApiException(ErrorCode.ONBOARDING_REQUIRED));
         Map<Long, CandidateDto> candidates = eligibleCandidates(viewerId);
-        Map<Long, UserSummaryDto> users = userQueryService.getUserSummaries(
-                        Stream.concat(Stream.of(viewerId), candidates.keySet().stream()).toList())
-                .stream()
-                .collect(Collectors.toMap(UserSummaryDto::userId, Function.identity(), (first, second) -> first));
-        UserSummaryDto viewer = users.get(viewerId);
-        if (viewer == null || viewer.surveyRevision() <= 0) {
-            throw new ApiException(ErrorCode.ONBOARDING_REQUIRED);
-        }
-
-        Map<Long, Integer> revisions = new LinkedHashMap<>();
-        candidates.keySet().forEach(id -> revisions.put(id,
-                users.containsKey(id) ? users.get(id).surveyRevision() : 0));
+        Map<Long, Integer> revisions = surveyRevisionsOf(candidates.keySet());
         RecommendationCalculator.Result result = calculator.calculate(viewerId, viewer.surveyRevision(), revisions,
                 recalculateAll);
 
@@ -88,6 +83,16 @@ public class RecommendationService {
                         LinkedHashMap::new));
     }
 
+    private Map<Long, Integer> surveyRevisionsOf(Collection<Long> candidateIds) {
+        Map<Long, Integer> found = candidateIds.isEmpty() ? Map.of()
+                : userQueryService.getUserSummaries(List.copyOf(candidateIds)).stream()
+                        .collect(Collectors.toMap(UserSummaryDto::userId, UserSummaryDto::surveyRevision,
+                                (first, second) -> first));
+        Map<Long, Integer> revisions = new LinkedHashMap<>();
+        candidateIds.forEach(id -> revisions.put(id, found.getOrDefault(id, 0)));
+        return revisions;
+    }
+
     private Map<Long, RecommendationRelation> relationsOf(Long viewerId) {
         return matchingRepository.findAllByParticipant(viewerId).stream()
                 .collect(Collectors.toMap(matching -> matching.partnerOf(viewerId), RecommendationService::relationOf));
@@ -99,8 +104,8 @@ public class RecommendationService {
 
     private static RecommendationItem toItem(CandidateDto candidate, Integer matchScore,
             RecommendationRelation relation) {
-        return new RecommendationItem(candidate.userId(), candidate.nickname(), candidate.department(), null,
-                candidate.topCategories(), matchScore, relation);
+        return new RecommendationItem(candidate.userId(), candidate.nickname(), candidate.department(),
+                KoreanAge.of(candidate.birthYear()), candidate.topCategories(), matchScore, relation);
     }
 
     private record Recommendations(List<RecommendationItem> items, boolean changed) {

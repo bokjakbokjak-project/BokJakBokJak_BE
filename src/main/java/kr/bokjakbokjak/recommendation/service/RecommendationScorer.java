@@ -20,11 +20,14 @@ class RecommendationScorer {
 
     Integer score(Long viewerId, Long candidateId) {
         try {
-            BigDecimal mutual = matchingEngine.calculate(viewerId, candidateId).mutualScore();
-            return mutual == null ? null : mutual.multiply(PERCENT).setScale(0, RoundingMode.HALF_UP).intValueExact();
+            return toPercent(matchingEngine.calculate(viewerId, candidateId).mutualScore());
         } catch (IllegalArgumentException | IllegalStateException exception) {
             log.warn("Match score unavailable: viewer={}, candidate={}", viewerId, candidateId);
             return null;
         }
+    }
+
+    static Integer toPercent(BigDecimal ratio) {
+        return ratio == null ? null : ratio.multiply(PERCENT).setScale(0, RoundingMode.HALF_UP).intValueExact();
     }
 }

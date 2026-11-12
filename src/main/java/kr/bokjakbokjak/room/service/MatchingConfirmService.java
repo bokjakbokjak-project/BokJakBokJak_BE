@@ -11,12 +11,18 @@ public class MatchingConfirmService {
     private static final int MAX_ATTEMPTS = 3;
 
     private final MatchingConfirmer matchingConfirmer;
+    private final MatchingReader matchingReader;
+    private final ResurveyService resurveyService;
 
-    MatchingConfirmService(MatchingConfirmer matchingConfirmer) {
+    MatchingConfirmService(MatchingConfirmer matchingConfirmer, MatchingReader matchingReader,
+            ResurveyService resurveyService) {
         this.matchingConfirmer = matchingConfirmer;
+        this.matchingReader = matchingReader;
+        this.resurveyService = resurveyService;
     }
 
     public MatchingConfirmResponse confirm(Long userId, Long matchingId) {
+        resurveyService.syncIfStale(matchingReader.getParticipating(matchingId, userId));
         for (int attempt = 1; ; attempt++) {
             try {
                 return matchingConfirmer.confirm(userId, matchingId);

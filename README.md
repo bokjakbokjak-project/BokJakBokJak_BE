@@ -54,6 +54,15 @@ JPA 엔티티가 생성·수정 시각이 필요하면 `BaseEntity`를 상속합
 - `POST /api/auth/dev-login`은 개발·시연용입니다. `X-Dev-Login-Key` 헤더가 `DEV_LOGIN_KEY`와 같고 대상이 테스트 유저일 때만 토큰을 줍니다. 아래 테스트 유저 표의 회원 ID로 로그인합니다.
 - 테스트에서는 Redis 대신 메모리 저장소(`InMemoryAuthTokenStore`)를 씁니다.
 
+## 온보딩과 기숙사
+
+- `PUT /api/me/onboarding`은 학과·학번·이름(닉네임)·성별·출생년도·방 타입·카테고리 순위를 한 번에 저장합니다. 회원 정보와 순위는 한 트랜잭션으로 바뀝니다.
+  - 방 타입은 본인 학교 것이어야 하고, MVP에서는 2인실만 고를 수 있습니다.
+  - 카테고리 순위 규칙은 설문 제출과 같습니다(`CategoryPriorityValidator`).
+  - 첫 설문 제출 전에는 다시 저장할 수 있고, 제출 후에는 409입니다. 저장하면 `next_step`이 `SURVEY`가 됩니다.
+- `GET /api/dormitories?keyword=`는 본인 학교 기숙사를 이름으로 검색해 기숙사별로 방 타입을 묶어 돌려줍니다. 2인실만, 이름순 최대 30개입니다.
+- `POST /api/dormitories`는 검색에 없는 기숙사·방 타입을 등록합니다. 이름의 공백을 빼고 비교해서 같은 태그면 기존 `room_type_id`를 돌려줍니다.
+
 ## 채희님 연동용 내부 메서드
 
 B 모듈은 `kr.bokjakbokjak.matching`의 인터페이스를 생성자로 주입받습니다.

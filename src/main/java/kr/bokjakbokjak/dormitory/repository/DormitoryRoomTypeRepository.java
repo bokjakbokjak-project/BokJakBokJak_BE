@@ -8,6 +8,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface DormitoryRoomTypeRepository extends JpaRepository<DormitoryRoomType, Long> {
 
+    List<DormitoryRoomType> findAllByUniversityIdAndCapacity(Long universityId, int capacity);
+
+    List<DormitoryRoomType> findAllByUniversityIdAndDormitoryKey(Long universityId, String dormitoryKey);
+
     /** 주어진 방 타입과 같은 학교·같은 기숙사에 있는 방 타입 ID 전체 */
     @Query("""
             select other.id from DormitoryRoomType other, DormitoryRoomType base

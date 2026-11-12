@@ -30,7 +30,21 @@ public class DormitoryRoomType {
     @Column(nullable = false)
     private int capacity;
 
+    /** MVP에서 고를 수 있는 방 정원. 3·4인실은 추후 지원 */
+    public static final int SUPPORTED_CAPACITY = 2;
+
     protected DormitoryRoomType() {
+    }
+
+    public static DormitoryRoomType create(
+            Long universityId, String dormitoryKey, String dormitoryName, String name, int capacity) {
+        DormitoryRoomType roomType = new DormitoryRoomType();
+        roomType.universityId = universityId;
+        roomType.dormitoryKey = dormitoryKey;
+        roomType.dormitoryName = dormitoryName;
+        roomType.name = name;
+        roomType.capacity = capacity;
+        return roomType;
     }
 
     public Long getId() {

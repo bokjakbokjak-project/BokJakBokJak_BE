@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Base64;
 import java.util.List;
 import kr.bokjakbokjak.matching.CandidateDto;
-import kr.bokjakbokjak.matching.UserQueryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,7 +16,7 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest(properties = "app.matching.candidate-scope=DORMITORY")
 @ActiveProfiles("test")
 class UserQueryServiceDormitoryScopeTest {
-    @Autowired UserQueryService userQueryService;
+    @Autowired UserQueryServiceImpl userQueryService;
     @Autowired JdbcClient jdbc;
 
     @DynamicPropertySource

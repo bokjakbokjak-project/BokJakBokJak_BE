@@ -10,7 +10,6 @@ import kr.bokjakbokjak.matching.MatchItemDto;
 import kr.bokjakbokjak.matching.MatchLabel;
 import kr.bokjakbokjak.matching.MatchResultDto;
 import kr.bokjakbokjak.matching.MatchingEngine;
-import kr.bokjakbokjak.matching.UserQueryService;
 import kr.bokjakbokjak.matching.UserSummaryDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,18 +24,13 @@ import org.springframework.test.context.DynamicPropertySource;
 @SpringBootTest
 @ActiveProfiles("test")
 class UserQueryServiceImplTest {
-    @Autowired UserQueryService userQueryService;
+    @Autowired UserQueryServiceImpl userQueryService;
     @Autowired MatchingEngine matchingEngine;
     @Autowired JdbcClient jdbc;
 
     @DynamicPropertySource
     static void config(DynamicPropertyRegistry registry) {
         registry.add("app.jwt.secret-base64", () -> Base64.getEncoder().encodeToString(new byte[32]));
-    }
-
-    @Test
-    void realServiceIsRegisteredByDefault() {
-        assertThat(userQueryService).isInstanceOf(UserQueryServiceImpl.class);
     }
 
     @Test

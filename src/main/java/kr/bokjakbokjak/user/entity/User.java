@@ -2,6 +2,8 @@ package kr.bokjakbokjak.user.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,6 +17,36 @@ public class User extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "university_id")
+    private Long universityId;
+
+    @Column(length = 20)
+    private String nickname;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private Gender gender;
+
+    @Column(name = "birth_year")
+    private Integer birthYear;
+
+    @Column(length = 60)
+    private String department;
+
+    @Column(name = "student_number", length = 10)
+    private String studentNumber;
+
+    @Column(name = "room_type_id")
+    private Long roomTypeId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private UserStatus status = UserStatus.ACTIVE;
+
+    /** 시연·연동용 테스트 유저. 테스트 로그인은 이 회원만 허용한다 */
+    @Column(name = "test_user", nullable = false)
+    private boolean testUser;
 
     @Column(name = "onboarding_completed_at")
     private Instant onboardingCompletedAt;
@@ -36,6 +68,24 @@ public class User extends BaseEntity {
         return surveyRevision > 0;
     }
 
+    public boolean isActive() {
+        return status == UserStatus.ACTIVE;
+    }
+
+    /** 후보 조회에 필요한 학교·성별·방 타입이 모두 있는지 */
+    public boolean hasDormitoryProfile() {
+        return universityId != null && gender != null && roomTypeId != null;
+    }
+
+    /** 학번 앞 4자리를 입학년도로 본다. 형식이 맞지 않으면 null */
+    public Integer getEntryYear() {
+        if (studentNumber == null || studentNumber.length() < 4) {
+            return null;
+        }
+        String prefix = studentNumber.substring(0, 4);
+        return prefix.chars().allMatch(Character::isDigit) ? Integer.valueOf(prefix) : null;
+    }
+
     /** 설문 내용이 바뀌었을 때 호출한다. 차수를 1 올리고 새 차수를 돌려준다. */
     public int completeSurvey(Instant submittedAt) {
         surveyRevision++;
@@ -45,6 +95,42 @@ public class User extends BaseEntity {
 
     public Long getId() {
         return id;
+    }
+
+    public Long getUniversityId() {
+        return universityId;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public Integer getBirthYear() {
+        return birthYear;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public String getStudentNumber() {
+        return studentNumber;
+    }
+
+    public Long getRoomTypeId() {
+        return roomTypeId;
+    }
+
+    public UserStatus getStatus() {
+        return status;
+    }
+
+    public boolean isTestUser() {
+        return testUser;
     }
 
     public Instant getOnboardingCompletedAt() {

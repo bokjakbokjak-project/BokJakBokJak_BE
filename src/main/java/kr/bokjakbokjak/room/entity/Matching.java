@@ -115,6 +115,24 @@ public class Matching extends BaseEntity {
         throw new IllegalArgumentException("Not a participant: " + userId);
     }
 
+    public void endBy(Long userId) {
+        end(userId, EndReason.USER_ENDED);
+    }
+
+    public void endByPartnerMatched() {
+        end(null, EndReason.PARTNER_MATCHED);
+    }
+
+    private void end(Long endedBy, EndReason reason) {
+        if (!isChatting()) {
+            throw new IllegalStateException("Only chatting matching can end: " + id);
+        }
+        this.status = MatchingStatus.ENDED;
+        this.endedBy = endedBy;
+        this.endReason = reason;
+        this.endedAt = Instant.now();
+    }
+
     public boolean isChatting() {
         return status == MatchingStatus.CHATTING;
     }

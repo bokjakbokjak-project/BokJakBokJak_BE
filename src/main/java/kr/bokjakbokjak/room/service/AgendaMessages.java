@@ -12,6 +12,10 @@ final class AgendaMessages {
         return "%s 번째 안건이에요. %s".formatted(ordinal(seq), content);
     }
 
+    static String decided(String nickname) {
+        return "%s님이 안건을 확정했어요.".formatted(nickname);
+    }
+
     private static String ordinal(int seq) {
         return seq >= 1 && seq <= ORDINALS.size() ? ORDINALS.get(seq - 1) : String.valueOf(seq);
     }

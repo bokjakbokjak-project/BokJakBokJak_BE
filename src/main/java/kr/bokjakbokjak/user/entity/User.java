@@ -93,6 +93,11 @@ public class User extends BaseEntity {
         this.onboardingCompletedAt = completedAt;
     }
 
+    /** 닉네임만 바꾼다. 설문 차수와 매칭 점수에는 영향이 없다 */
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     public boolean isOnboardingCompleted() {
         return onboardingCompletedAt != null;
     }

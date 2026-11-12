@@ -1,6 +1,8 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:bokjak-test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    # 테스트 컨텍스트마다 별도 메모리 DB를 쓴다. 하나의 DB를 공유하면 오래된 컨텍스트가 정리될 때
+    # Flyway가 만든 CHECK 제약이 닫힌 연결을 참조해 이후 INSERT가 "database has been closed"로 실패한다
+    url: jdbc:h2:mem:bokjak-test-${random.uuid};MODE=PostgreSQL;DB_CLOSE_DELAY=-1
     username: sa
     password:
 

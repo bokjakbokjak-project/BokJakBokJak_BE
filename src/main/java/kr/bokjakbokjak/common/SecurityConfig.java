@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import kr.bokjakbokjak.auth.token.AuthTokenStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,7 +28,8 @@ import tools.jackson.databind.ObjectMapper;
 @Configuration
 public class SecurityConfig {
     @Bean
-    SecurityFilterChain apiSecurity(HttpSecurity http, JwtService jwtService, ObjectMapper mapper) throws Exception {
+    SecurityFilterChain apiSecurity(HttpSecurity http, JwtService jwtService, AuthTokenStore tokenStore,
+            ObjectMapper mapper) throws Exception {
         AuthenticationEntryPoint unauthorized = (request, response, exception) -> {
             response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
             writeFailure(response, mapper, ErrorCode.UNAUTHORIZED);
@@ -45,10 +47,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(requests -> requests
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/login", "/api/auth/refresh", "/api/auth/dev-login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(new JwtAuthenticationFilter(jwtService, unauthorized),
+                .addFilterBefore(new JwtAuthenticationFilter(jwtService, tokenStore, unauthorized),
                         UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

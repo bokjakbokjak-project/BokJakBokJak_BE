@@ -1,6 +1,9 @@
 -- 시연·연동 테스트용 페르소나 13명 (test_user = TRUE, 온보딩·설문 완료 상태)
 -- 기본은 동국대 남산학사 2인실. 옆동주민은 다른 기숙사, 옆방타입은 다른 방 타입, 민트초코는 남성이라 책갈피의 후보에서 빠져야 한다
 
+-- 회원 ID는 1000부터 쓴다. 테스트 코드가 임의로 쓰는 작은 ID(7, 12 등)가 실제 회원과 겹치지 않게 한다
+ALTER TABLE app_user ALTER COLUMN id RESTART WITH 1000;
+
 INSERT INTO app_user (university_id, nickname, gender, birth_year, department, student_number, room_type_id,
                       status, test_user, onboarding_completed_at, survey_revision, survey_completed_at, created_at, updated_at)
 SELECT u.id, p.nickname, p.gender, p.birth_year, p.department, p.student_number, r.id,

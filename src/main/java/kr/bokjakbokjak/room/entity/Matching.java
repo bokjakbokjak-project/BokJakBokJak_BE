@@ -95,8 +95,71 @@ public class Matching extends BaseEntity {
         return requesterId.equals(userId) || receiverId.equals(userId);
     }
 
+    public Long partnerOf(Long userId) {
+        if (requesterId.equals(userId)) {
+            return receiverId;
+        }
+        if (receiverId.equals(userId)) {
+            return requesterId;
+        }
+        throw new IllegalArgumentException("Not a participant: " + userId);
+    }
+
+    public boolean isConfirmedBy(Long userId) {
+        if (requesterId.equals(userId)) {
+            return requesterConfirmed;
+        }
+        if (receiverId.equals(userId)) {
+            return receiverConfirmed;
+        }
+        throw new IllegalArgumentException("Not a participant: " + userId);
+    }
+
+    public void confirmBy(Long userId) {
+        if (!isChatting()) {
+            throw new IllegalStateException("Only chatting matching can be confirmed: " + id);
+        }
+        if (requesterId.equals(userId)) {
+            requesterConfirmed = true;
+        } else if (receiverId.equals(userId)) {
+            receiverConfirmed = true;
+        } else {
+            throw new IllegalArgumentException("Not a participant: " + userId);
+        }
+        if (requesterConfirmed && receiverConfirmed) {
+            status = MatchingStatus.CONFIRMED;
+            confirmedAt = Instant.now();
+        }
+    }
+
+    public void endBy(Long userId) {
+        end(userId, EndReason.USER_ENDED);
+    }
+
+    public void endByPartnerMatched() {
+        end(null, EndReason.PARTNER_MATCHED);
+    }
+
+    private void end(Long endedBy, EndReason reason) {
+        if (!isChatting()) {
+            throw new IllegalStateException("Only chatting matching can end: " + id);
+        }
+        this.status = MatchingStatus.ENDED;
+        this.endedBy = endedBy;
+        this.endReason = reason;
+        this.endedAt = Instant.now();
+    }
+
     public boolean isChatting() {
         return status == MatchingStatus.CHATTING;
+    }
+
+    public boolean isConfirmed() {
+        return status == MatchingStatus.CONFIRMED;
+    }
+
+    public boolean isEnded() {
+        return status == MatchingStatus.ENDED;
     }
 
     public Long getId() {

@@ -26,6 +26,7 @@ export JWT_SECRET_BASE64="$(openssl rand -base64 32)"
 - `SERVER_PORT`의 기본값은 `8080`, `JWT_ACCESS_TTL`의 기본값은 `30m`입니다.
 - `JWT_ISSUER`와 `JWT_AUDIENCE`의 기본값은 각각 `bokjakbokjak`, `bokjakbokjak-api`입니다.
 - `MATCHING_CANDIDATE_SCOPE`는 추천 후보 범위입니다. 기본값 `ROOM_TYPE`은 같은 기숙사·같은 방 타입만, `DORMITORY`는 같은 기숙사면 방 타입이 달라도 후보로 봅니다.
+- `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION`은 AI 요약·분석·안건 생성에 쓰는 Azure OpenAI 설정입니다. 하나라도 비어 있으면 AI를 호출하지 않고 설문 답변 기반의 기본 문구로 동작하므로, 로컬 실행과 테스트에는 없어도 됩니다.
 - `.env.example`은 변수 이름과 예시값만 담습니다. 실제 비밀번호와 JWT 키가 들어간 `.env`는 Git에서 제외됩니다.
 - 앱이 뜰 때 Flyway가 `src/main/resources/db/migration`의 SQL을 먼저 적용하고, 그다음 JPA `ddl-auto: update`가 마이그레이션에 없는 테이블을 만듭니다.
   - 회원·설문·온보딩·기숙사 테이블은 Flyway로 관리합니다. 스키마를 바꿀 때는 기존 파일을 고치지 말고 `V{다음번호}__설명.sql`을 새로 추가합니다.

@@ -132,6 +132,28 @@ public class Matching extends BaseEntity {
         }
     }
 
+    public boolean applySurveyRevision(Long userId, int revision) {
+        if (!isChatting()) {
+            return false;
+        }
+        if (requesterId.equals(userId)) {
+            if (revision <= requesterSurveyRevision) {
+                return false;
+            }
+            requesterSurveyRevision = revision;
+        } else if (receiverId.equals(userId)) {
+            if (revision <= receiverSurveyRevision) {
+                return false;
+            }
+            receiverSurveyRevision = revision;
+        } else {
+            throw new IllegalArgumentException("Not a participant: " + userId);
+        }
+        requesterConfirmed = false;
+        receiverConfirmed = false;
+        return true;
+    }
+
     public void endBy(Long userId) {
         end(userId, EndReason.USER_ENDED);
     }

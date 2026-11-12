@@ -2,6 +2,7 @@ package kr.bokjakbokjak.room.service;
 
 import java.util.List;
 import kr.bokjakbokjak.room.entity.Matching;
+import kr.bokjakbokjak.room.event.AgendasResetEvent;
 import kr.bokjakbokjak.room.event.ChatStartedEvent;
 import kr.bokjakbokjak.room.repository.MatchingRepository;
 import org.slf4j.Logger;
@@ -31,6 +32,12 @@ class AgendaPreparationListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onChatStarted(ChatStartedEvent event) {
+        prepare(event.matchingId());
+    }
+
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onAgendasReset(AgendasResetEvent event) {
         prepare(event.matchingId());
     }
 

@@ -28,15 +28,17 @@ public class ChatRoomService {
     private final AgendaRepository agendaRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatPartnerReader partnerReader;
+    private final ResurveyService resurveyService;
 
     ChatRoomService(MatchingRepository matchingRepository, MatchingReader matchingReader,
             AgendaRepository agendaRepository, ChatMessageRepository chatMessageRepository,
-            ChatPartnerReader partnerReader) {
+            ChatPartnerReader partnerReader, ResurveyService resurveyService) {
         this.matchingRepository = matchingRepository;
         this.matchingReader = matchingReader;
         this.agendaRepository = agendaRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.partnerReader = partnerReader;
+        this.resurveyService = resurveyService;
     }
 
     @Transactional(readOnly = true)
@@ -61,9 +63,11 @@ public class ChatRoomService {
         return new ChatRoomListResponse(rooms);
     }
 
-    @Transactional(readOnly = true)
     public ChatRoomResponse getRoom(Long userId, Long matchingId) {
         Matching matching = matchingReader.getParticipating(matchingId, userId);
+        if (resurveyService.syncIfStale(matching)) {
+            matching = matchingReader.getParticipating(matchingId, userId);
+        }
         Long partnerId = matching.partnerOf(userId);
         List<ChatRoomResponse.AgendaItem> agendas = agendaRepository.findAllByMatchingIdOrderBySeqAsc(matchingId)
                 .stream()

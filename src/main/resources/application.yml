@@ -31,3 +31,6 @@ app:
     ttl: ${JWT_ACCESS_TTL:30m}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  matching:
+    # ROOM_TYPE: 같은 기숙사·같은 방 타입만 후보 / DORMITORY: 같은 기숙사면 방 타입이 달라도 후보
+    candidate-scope: ${MATCHING_CANDIDATE_SCOPE:ROOM_TYPE}

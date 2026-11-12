@@ -17,18 +17,18 @@ final class MatchingFixture implements UserQueryService, MatchingEngine {
 
     private static final Map<Long, UserSummaryDto> USERS = Map.of(
             FIRST_ID, new UserSummaryDto(
-                    FIRST_ID, "책갈피", "산업공학과", "ACTIVE", 1,
+                    FIRST_ID, "책갈피", "산업공학과", 2004, "ACTIVE", 1,
                     List.of("CLEANING", "SLEEP_HABITS", "SMOKING")),
             SECOND_ID, new UserSummaryDto(
-                    SECOND_ID, "민트초코", "컴퓨터공학과", "ACTIVE", 3,
+                    SECOND_ID, "민트초코", "컴퓨터공학과", 2003, "ACTIVE", 3,
                     List.of("SMOKING", "CLEANING", "PERSONAL_HYGIENE")),
             WITHDRAWN_ID, new UserSummaryDto(
-                    WITHDRAWN_ID, "이전 사용자", "기계공학과", "WITHDRAWN", 2, List.of()));
+                    WITHDRAWN_ID, "이전 사용자", "기계공학과", 2002, "WITHDRAWN", 2, List.of()));
 
     private static final Map<Long, CandidateDto> CANDIDATES = Map.of(
-            FIRST_ID, new CandidateDto(FIRST_ID, "책갈피", "산업공학과", 2024,
+            FIRST_ID, new CandidateDto(FIRST_ID, "책갈피", "산업공학과", 2024, 2004,
                     USERS.get(FIRST_ID).topCategories()),
-            SECOND_ID, new CandidateDto(SECOND_ID, "민트초코", "컴퓨터공학과", 2023,
+            SECOND_ID, new CandidateDto(SECOND_ID, "민트초코", "컴퓨터공학과", 2023, 2003,
                     USERS.get(SECOND_ID).topCategories()));
 
     private static final BigDecimal FIRST_PERSPECTIVE_SCORE = new BigDecimal("0.85");

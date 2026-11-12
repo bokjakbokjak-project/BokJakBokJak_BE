@@ -18,6 +18,12 @@ public class User extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "google_sub", unique = true)
+    private String googleSub;
+
+    @Column(length = 320)
+    private String email;
+
     @Column(name = "university_id")
     private Long universityId;
 
@@ -60,6 +66,15 @@ public class User extends BaseEntity {
     protected User() {
     }
 
+    /** Google 학교 계정으로 처음 로그인한 회원. 온보딩 정보는 비어 있다 */
+    public static User register(Long universityId, String googleSub, String email) {
+        User user = new User();
+        user.universityId = universityId;
+        user.googleSub = googleSub;
+        user.email = email;
+        return user;
+    }
+
     public boolean isOnboardingCompleted() {
         return onboardingCompletedAt != null;
     }
@@ -95,6 +110,14 @@ public class User extends BaseEntity {
 
     public Long getId() {
         return id;
+    }
+
+    public String getGoogleSub() {
+        return googleSub;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public Long getUniversityId() {

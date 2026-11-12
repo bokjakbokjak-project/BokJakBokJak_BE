@@ -75,6 +75,24 @@ public class User extends BaseEntity {
         return user;
     }
 
+    /** 온보딩 4단계 정보를 저장한다. 첫 설문 제출 전까지는 다시 저장할 수 있다 */
+    public void completeOnboarding(
+            String department,
+            String studentNumber,
+            String nickname,
+            Gender gender,
+            int birthYear,
+            Long roomTypeId,
+            Instant completedAt) {
+        this.department = department;
+        this.studentNumber = studentNumber;
+        this.nickname = nickname;
+        this.gender = gender;
+        this.birthYear = birthYear;
+        this.roomTypeId = roomTypeId;
+        this.onboardingCompletedAt = completedAt;
+    }
+
     public boolean isOnboardingCompleted() {
         return onboardingCompletedAt != null;
     }

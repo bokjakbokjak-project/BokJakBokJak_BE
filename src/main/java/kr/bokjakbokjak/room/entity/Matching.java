@@ -115,6 +115,23 @@ public class Matching extends BaseEntity {
         throw new IllegalArgumentException("Not a participant: " + userId);
     }
 
+    public void confirmBy(Long userId) {
+        if (!isChatting()) {
+            throw new IllegalStateException("Only chatting matching can be confirmed: " + id);
+        }
+        if (requesterId.equals(userId)) {
+            requesterConfirmed = true;
+        } else if (receiverId.equals(userId)) {
+            receiverConfirmed = true;
+        } else {
+            throw new IllegalArgumentException("Not a participant: " + userId);
+        }
+        if (requesterConfirmed && receiverConfirmed) {
+            status = MatchingStatus.CONFIRMED;
+            confirmedAt = Instant.now();
+        }
+    }
+
     public void endBy(Long userId) {
         end(userId, EndReason.USER_ENDED);
     }
@@ -135,6 +152,10 @@ public class Matching extends BaseEntity {
 
     public boolean isChatting() {
         return status == MatchingStatus.CHATTING;
+    }
+
+    public boolean isConfirmed() {
+        return status == MatchingStatus.CONFIRMED;
     }
 
     public boolean isEnded() {

@@ -61,7 +61,7 @@ class SurveyControllerTest {
                         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)))
                 .andExpect(jsonPath("$.data.topics[*].questions[0].kind").value(everyItem(is("HABIT"))))
                 .andExpect(jsonPath("$.data.topics[*].questions[1].kind").value(everyItem(is("TOLERANCE"))))
-                .andExpect(jsonPath("$.data.topics[*].questions[*].options[*]", hasSize(73)));
+                .andExpect(jsonPath("$.data.topics[*].questions[*].options[*]", hasSize(71)));
     }
 
     @Test
@@ -74,7 +74,15 @@ class SurveyControllerTest {
                         .value("나는 코골이, 잠꼬대 같은 잠버릇이 어느 정도 있는 편인가요?"))
                 .andExpect(jsonPath("$.data.topics[0].questions[0].options[*].option_code").value(contains(
                         "FREQUENT", "OCCASIONAL", "RARE", "NONE", "UNKNOWN")))
-                .andExpect(jsonPath("$.data.topics[1].questions[0].options", hasSize(7)))
+                .andExpect(jsonPath("$.data.topics[1].questions[0].options[*].option_code").value(contains(
+                        "BEFORE_22", "FROM_22_TO_24", "FROM_00_TO_02", "AFTER_02", "IRREGULAR")))
+                .andExpect(jsonPath("$.data.topics[1].questions[0].options[*].label").value(contains(
+                        "밤 10시 이전", "밤 10시~12시", "새벽 12시~2시", "새벽 2시 이후", "일정하지 않다")))
+                .andExpect(jsonPath("$.data.topics[1].questions[1].options[4].label").value("큰 소음이 아니라면 상관없다"))
+                .andExpect(jsonPath("$.data.topics[5].scenario_text")
+                        .value("옷과 가방, 책 같은 개인 물건이 방 안에 꺼내져 있어요."))
+                .andExpect(jsonPath("$.data.topics[7].questions[0].options[1].label")
+                        .value("흡연자이지만 기숙사에서는 자제할 예정이다"))
                 .andExpect(jsonPath("$.data.topics[7].questions[1].question_code").value("SMOKING_T"))
                 .andExpect(jsonPath("$.data.topics[7].questions[1].options[3].label")
                         .value("흡연자와는 같은 방이 어렵다"));

@@ -37,7 +37,7 @@ class SurveyProfileServiceTest {
     void returnsTopThreeCategoriesAndTopicSentences() {
         long userId = createUser();
         submit(userId, 0, List.of("SMOKING", "CLEANING", "SLEEP_SCHEDULE", "PERSONAL_HYGIENE"),
-                Map.of("BEDTIME_H", "FROM_00_TO_01"));
+                Map.of("BEDTIME_H", "FROM_00_TO_02"));
 
         SurveyProfileDto profile = surveyProfileQueryService.getSurveyProfile(userId);
 
@@ -61,7 +61,7 @@ class SurveyProfileServiceTest {
         assertThat(bedtime.categoryName()).isEqualTo("기상 알람");
         assertThat(bedtime.scenarioText()).startsWith("밤 12시가 되었어요.");
         assertThat(bedtime.habitQuestion()).isEqualTo("평일에 나는 보통 몇 시쯤 잠자리에 드나요?");
-        assertThat(bedtime.habitAnswer()).isEqualTo("새벽 12시~1시");
+        assertThat(bedtime.habitAnswer()).isEqualTo("새벽 12시~2시");
         assertThat(bedtime.toleranceQuestion())
                 .isEqualTo("룸메이트가 방 안에서 깨어 있어도 괜찮은 마감 시간은 언제까지인가요?");
         assertThat(bedtime.toleranceAnswer()).isEqualTo("새벽 1시까지");
@@ -97,7 +97,7 @@ class SurveyProfileServiceTest {
     private void submit(long userId, int expectedRevision, List<String> categories, Map<String, String> overrides) {
         Map<String, String> answers = new LinkedHashMap<>(Map.ofEntries(
                 Map.entry("SLEEP_HABITS_H", "RARE"), Map.entry("SLEEP_HABITS_T", "OCCASIONAL_OK"),
-                Map.entry("BEDTIME_H", "FROM_23_TO_24"), Map.entry("BEDTIME_T", "BY_01"),
+                Map.entry("BEDTIME_H", "FROM_22_TO_24"), Map.entry("BEDTIME_T", "BY_01"),
                 Map.entry("ALARM_H", "ONCE"), Map.entry("ALARM_T", "UP_TO_2"),
                 Map.entry("FLOOR_CLEAN_H", "WEEKLY"), Map.entry("FLOOR_CLEAN_T", "WEEKLY_MIN"),
                 Map.entry("FOOD_WASTE_H", "SAME_DAY"), Map.entry("FOOD_WASTE_T", "SAME_DAY_OK"),

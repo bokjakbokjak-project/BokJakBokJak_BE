@@ -102,6 +102,18 @@ class AuthControllerTest {
     }
 
     @Test
+    void addedSchoolsAreResolvedByGoogleWorkspaceDomain() throws Exception {
+        String sub = newSub();
+        login(idToken(sub, sub + "@g.skku.edu", "g.skku.edu"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.university_id").value((int) universityIdOf("SKKU")));
+        String other = newSub();
+        login(idToken(other, other + "@yonsei.ac.kr", "yonsei.ac.kr"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.university_id").value((int) universityIdOf("YONSEI")));
+    }
+
+    @Test
     void rejectsPersonalGmailUnknownSchoolAndUnverifiedEmail() throws Exception {
         login(idToken(newSub(), "someone@gmail.com", null))
                 .andExpect(status().isForbidden())

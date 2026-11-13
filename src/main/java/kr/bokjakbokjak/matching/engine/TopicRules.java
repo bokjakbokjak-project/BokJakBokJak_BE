@@ -50,10 +50,9 @@ final class TopicRules {
                     Map.of("NONE", 0, "RARE", 1, "OCCASIONAL", 2, "FREQUENT", 3),
                     Map.of("NONE_ONLY", 0, "RARE_OK", 1, "OCCASIONAL_OK", 2, "FREQUENT_OK", 3),
                     Set.of(), Set.of("UNKNOWN"), Set.of()),
-            // 잠드는 시간대의 끝 시각 기준, 1시간 = 1칸
+            // 잠드는 시간대의 늦은 쪽 끝 시각 기준, 1시간 = 1칸 (22시 0, 24시 2, 2시 4)
             "BEDTIME", new Scale(
-                    Map.of("BEFORE_22", 0, "FROM_22_TO_23", 1, "FROM_23_TO_24", 2,
-                            "FROM_00_TO_01", 3, "FROM_01_TO_02", 4, "AFTER_02", 5),
+                    Map.of("BEFORE_22", 0, "FROM_22_TO_24", 2, "FROM_00_TO_02", 4, "AFTER_02", 5),
                     Map.of("BY_23", 1, "BY_24", 2, "BY_01", 3, "BY_02", 4),
                     Set.of(), Set.of("IRREGULAR"), Set.of("QUIET_ANY")),
             "ALARM", new Scale(

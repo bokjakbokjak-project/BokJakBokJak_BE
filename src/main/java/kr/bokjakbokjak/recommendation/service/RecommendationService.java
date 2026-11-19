@@ -51,7 +51,7 @@ public class RecommendationService {
                 .filter(user -> user.userId().equals(viewerId))
                 .findFirst()
                 .filter(user -> user.surveyRevision() > 0)
-                .orElseThrow(() -> new ApiException(ErrorCode.ONBOARDING_REQUIRED));
+                .orElseThrow(() -> new ApiException(ErrorCode.SURVEY_REQUIRED));
         Map<Long, CandidateDto> candidates = eligibleCandidates(viewerId);
         Map<Long, Integer> revisions = surveyRevisionsOf(candidates.keySet());
         RecommendationCalculator.Result result = calculator.calculate(viewerId, viewer.surveyRevision(), revisions,

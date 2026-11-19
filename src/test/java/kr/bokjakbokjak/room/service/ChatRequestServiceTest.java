@@ -106,7 +106,7 @@ class ChatRequestServiceTest {
     void requesterMustCompleteSurvey() {
         users.addUser(BOOKMARK, "책갈피", 0);
 
-        assertRejected(() -> chatRequestService.request(BOOKMARK, MINT), "ONBOARDING_REQUIRED", HttpStatus.CONFLICT);
+        assertRejected(() -> chatRequestService.request(BOOKMARK, MINT), "SURVEY_REQUIRED", HttpStatus.CONFLICT);
     }
 
     @Test

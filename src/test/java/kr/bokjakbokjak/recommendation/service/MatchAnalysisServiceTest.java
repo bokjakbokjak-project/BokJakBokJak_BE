@@ -112,7 +112,7 @@ class MatchAnalysisServiceTest {
     void viewerMustCompleteSurvey() {
         users.addUser(VIEWER, "책갈피", 0);
 
-        assertRejected(MINT, "ONBOARDING_REQUIRED", HttpStatus.CONFLICT);
+        assertRejected(MINT, "SURVEY_REQUIRED", HttpStatus.CONFLICT);
     }
 
     @Test

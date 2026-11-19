@@ -32,7 +32,7 @@ class ChatRequestValidator {
                 .collect(Collectors.toMap(UserSummaryDto::userId, Function.identity()));
         UserSummaryDto requester = users.get(requesterId);
         if (requester == null || requester.surveyRevision() <= 0) {
-            throw new ApiException(ErrorCode.ONBOARDING_REQUIRED);
+            throw new ApiException(ErrorCode.SURVEY_REQUIRED);
         }
         if (requesterId.equals(receiverId)) {
             throw new ApiException(ErrorCode.CANNOT_REQUEST_SELF);

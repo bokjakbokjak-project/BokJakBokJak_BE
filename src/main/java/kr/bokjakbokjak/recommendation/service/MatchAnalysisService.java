@@ -38,7 +38,7 @@ public class MatchAnalysisService {
                 .collect(Collectors.toMap(UserSummaryDto::userId, Function.identity(), (first, second) -> first));
         UserSummaryDto viewer = users.get(viewerId);
         if (viewer == null || viewer.surveyRevision() <= 0) {
-            throw new ApiException(ErrorCode.ONBOARDING_REQUIRED);
+            throw new ApiException(ErrorCode.SURVEY_REQUIRED);
         }
         UserSummaryDto target = users.get(targetId);
         if (target == null || !ACTIVE.equals(target.status())) {

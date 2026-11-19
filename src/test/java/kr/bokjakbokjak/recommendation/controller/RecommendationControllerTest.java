@@ -127,7 +127,7 @@ class RecommendationControllerTest {
 
         mvc.perform(authorized(get("/api/recommendations"), VIEWER))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("ONBOARDING_REQUIRED"));
+                .andExpect(jsonPath("$.code").value("SURVEY_REQUIRED"));
     }
 
     private MockHttpServletRequestBuilder authorized(MockHttpServletRequestBuilder request, long userId) {

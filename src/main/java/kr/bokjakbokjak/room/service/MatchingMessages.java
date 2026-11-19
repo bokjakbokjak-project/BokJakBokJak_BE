@@ -12,6 +12,10 @@ final class MatchingMessages {
         return "%s님이 먼저 매칭을 확정했어요.".formatted(nickname);
     }
 
+    static String matchingConfirmed(String nickname) {
+        return "%s님과 룸메이트 매칭이 완료됐어요.".formatted(nickname);
+    }
+
     static String surveyChanged(String nickname) {
         return "%s님이 설문을 수정해서 안건을 새로 준비할게요.".formatted(nickname);
     }

@@ -52,11 +52,14 @@ class MatchingConfirmer {
         }
 
         matching.confirmBy(userId);
+        String nickname = userReader.read(userId).nickname();
         if (matching.isConfirmed()) {
             endOtherChats(matching);
+            notificationSender.send(partnerId, matchingId, NotificationType.MATCHING_CONFIRMED,
+                    MatchingMessages.matchingConfirmed(nickname));
         } else {
             notificationSender.send(partnerId, matchingId, NotificationType.PARTNER_CONFIRMED,
-                    MatchingMessages.partnerConfirmedFirst(userReader.read(userId).nickname()));
+                    MatchingMessages.partnerConfirmedFirst(nickname));
         }
         matchingRepository.flush();
         return MatchingConfirmResponse.of(matching, userId);

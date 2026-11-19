@@ -12,7 +12,8 @@ class TopicRulesTest {
     void habitInsideToleranceIsFullScore() {
         assertThat(TopicRules.judge("FLOOR_CLEAN", "DAILY", "WEEKLY_MIN")).isEqualTo(Judgment.FIT);
         assertThat(TopicRules.judge("FLOOR_CLEAN", "WEEKLY", "WEEKLY_MIN")).isEqualTo(Judgment.FIT);
-        assertThat(TopicRules.judge("BEDTIME", "FROM_23_TO_24", "BY_24")).isEqualTo(Judgment.FIT);
+        assertThat(TopicRules.judge("BEDTIME", "FROM_22_TO_24", "BY_24")).isEqualTo(Judgment.FIT);
+        assertThat(TopicRules.judge("BEDTIME", "FROM_00_TO_02", "BY_02")).isEqualTo(Judgment.FIT);
     }
 
     @Test
@@ -23,9 +24,12 @@ class TopicRulesTest {
         assertThat(TopicRules.judge("FLOOR_CLEAN", "RARELY", "DAILY_MIN").score()).isEqualTo(0);
         assertThat(TopicRules.judge("BEDTIME", "AFTER_02", "BY_23").score()).isEqualTo(0);
 
-        Judgment oneHourLate = TopicRules.judge("BEDTIME", "FROM_00_TO_01", "BY_24");
-        assertThat(oneHourLate.score()).isEqualTo(0.75);
-        assertThat(oneHourLate.outOfRange()).isTrue();
+        // 새벽 12시~2시는 끝 시각인 새벽 2시 기준이라 새벽 1시 마감보다 1칸, 12시 마감보다 2칸 늦다
+        Judgment oneStepLate = TopicRules.judge("BEDTIME", "FROM_00_TO_02", "BY_01");
+        assertThat(oneStepLate.score()).isEqualTo(0.75);
+        assertThat(oneStepLate.outOfRange()).isTrue();
+        assertThat(TopicRules.judge("BEDTIME", "FROM_00_TO_02", "BY_24").score()).isEqualTo(0.5);
+        assertThat(TopicRules.judge("BEDTIME", "FROM_22_TO_24", "BY_23").score()).isEqualTo(0.75);
     }
 
     @Test

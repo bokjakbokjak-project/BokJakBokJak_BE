@@ -217,7 +217,7 @@ class MySurveyControllerTest {
         Map<String, String> answers = new LinkedHashMap<>();
         answers.put("SLEEP_HABITS_H", "UNKNOWN");
         answers.put("SLEEP_HABITS_T", "OCCASIONAL_OK");
-        answers.put("BEDTIME_H", "FROM_23_TO_24");
+        answers.put("BEDTIME_H", "FROM_22_TO_24");
         answers.put("BEDTIME_T", "BY_01");
         answers.put("ALARM_H", "AT_MOST_2");
         answers.put("ALARM_T", "UP_TO_2");

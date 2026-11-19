@@ -50,8 +50,8 @@ class SurveyMatchingEngineTest {
     void calculatesFromSavedSurveys() {
         long a = createUser();
         long b = createUser();
-        submit(a, List.of("CLEANING", "SLEEP_SCHEDULE", "PERSONAL_HYGIENE"), Map.of("BEDTIME_T", "BY_24"));
-        submit(b, List.of("SMOKING", "SLEEP_HABITS", "CLEANING"), Map.of("BEDTIME_H", "FROM_00_TO_01"));
+        submit(a, List.of("CLEANING", "SLEEP_SCHEDULE", "PERSONAL_HYGIENE"), Map.of("BEDTIME_T", "BY_01"));
+        submit(b, List.of("SMOKING", "SLEEP_HABITS", "CLEANING"), Map.of("BEDTIME_H", "FROM_00_TO_02"));
 
         MatchResultDto result = matchingEngine.calculate(a, b);
         MatchResultDto reversed = matchingEngine.calculate(b, a);
@@ -60,7 +60,7 @@ class SurveyMatchingEngineTest {
         assertThat(result.items()).hasSize(8);
         assertThat(result.items().get(1).topicCode()).isEqualTo("BEDTIME");
         assertThat(result.items().get(1).label()).isEqualTo(MatchLabel.NEED_ADJUST);
-        assertThat(result.items().get(1).targetHabit()).isEqualTo("새벽 12시~1시");
+        assertThat(result.items().get(1).targetHabit()).isEqualTo("새벽 12시~2시");
         assertThat(result.viewerToTarget()).isLessThan(result.targetToViewer());
         assertThat(reversed.viewerToTarget()).isEqualByComparingTo(result.targetToViewer());
         assertThat(reversed.mutualScore()).isEqualByComparingTo(result.mutualScore());
@@ -99,7 +99,7 @@ class SurveyMatchingEngineTest {
     private void submit(long userId, List<String> categories, Map<String, String> overrides) {
         Map<String, String> answers = new java.util.LinkedHashMap<>(Map.ofEntries(
                 Map.entry("SLEEP_HABITS_H", "RARE"), Map.entry("SLEEP_HABITS_T", "OCCASIONAL_OK"),
-                Map.entry("BEDTIME_H", "FROM_23_TO_24"), Map.entry("BEDTIME_T", "BY_01"),
+                Map.entry("BEDTIME_H", "FROM_22_TO_24"), Map.entry("BEDTIME_T", "BY_01"),
                 Map.entry("ALARM_H", "ONCE"), Map.entry("ALARM_T", "UP_TO_2"),
                 Map.entry("FLOOR_CLEAN_H", "WEEKLY"), Map.entry("FLOOR_CLEAN_T", "WEEKLY_MIN"),
                 Map.entry("FOOD_WASTE_H", "SAME_DAY"), Map.entry("FOOD_WASTE_T", "SAME_DAY_OK"),

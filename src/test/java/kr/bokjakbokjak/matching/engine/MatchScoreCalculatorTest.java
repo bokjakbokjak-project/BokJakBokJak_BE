@@ -28,7 +28,7 @@ class MatchScoreCalculatorTest {
             Map.of("CLEANING", 1, "SLEEP_SCHEDULE", 2, "PERSONAL_HYGIENE", 3),
             Map.ofEntries(
                     Map.entry("SLEEP_HABITS_H", "RARE"), Map.entry("SLEEP_HABITS_T", "OCCASIONAL_OK"),
-                    Map.entry("BEDTIME_H", "FROM_23_TO_24"), Map.entry("BEDTIME_T", "BY_24"),
+                    Map.entry("BEDTIME_H", "FROM_22_TO_24"), Map.entry("BEDTIME_T", "BY_01"),
                     Map.entry("ALARM_H", "ONCE"), Map.entry("ALARM_T", "UP_TO_2"),
                     Map.entry("FLOOR_CLEAN_H", "WEEKLY"), Map.entry("FLOOR_CLEAN_T", "WEEKLY_MIN"),
                     Map.entry("FOOD_WASTE_H", "SAME_DAY"), Map.entry("FOOD_WASTE_T", "SAME_DAY_OK"),
@@ -36,12 +36,12 @@ class MatchScoreCalculatorTest {
                     Map.entry("DISHES_H", "SAME_DAY"), Map.entry("DISHES_T", "SAME_DAY_OK"),
                     Map.entry("SMOKING_H", "NON_SMOKER"), Map.entry("SMOKING_T", "ANY_OK")));
 
-    // A와 같은 습관이지만 취침만 1시간 늦고, 허용범위는 넓다
+    // A와 같은 습관이지만 취침만 늦고(A 허용범위보다 1칸), 허용범위는 넓다
     private static final Profile B = new Profile(2L,
             Map.of("SMOKING", 1, "SLEEP_HABITS", 2, "CLEANING", 3),
             Map.ofEntries(
                     Map.entry("SLEEP_HABITS_H", "RARE"), Map.entry("SLEEP_HABITS_T", "FREQUENT_OK"),
-                    Map.entry("BEDTIME_H", "FROM_00_TO_01"), Map.entry("BEDTIME_T", "BY_02"),
+                    Map.entry("BEDTIME_H", "FROM_00_TO_02"), Map.entry("BEDTIME_T", "BY_02"),
                     Map.entry("ALARM_H", "ONCE"), Map.entry("ALARM_T", "MANY_OK"),
                     Map.entry("FLOOR_CLEAN_H", "WEEKLY"), Map.entry("FLOOR_CLEAN_T", "WHEN_NEEDED"),
                     Map.entry("FOOD_WASTE_H", "SAME_DAY"), Map.entry("FOOD_WASTE_T", "NO_ISSUE_OK"),
@@ -78,7 +78,7 @@ class MatchScoreCalculatorTest {
         assertThat(items.get("BEDTIME").viewerWeight()).isEqualByComparingTo("8");
         assertThat(items.get("FLOOR_CLEAN").viewerWeight()).isEqualByComparingTo("11");
         assertThat(items.get("SMOKING").targetWeight()).isEqualByComparingTo("22");
-        assertThat(items.get("BEDTIME").targetHabit()).isEqualTo("FROM_00_TO_01");
+        assertThat(items.get("BEDTIME").targetHabit()).isEqualTo("FROM_00_TO_02");
     }
 
     @Test

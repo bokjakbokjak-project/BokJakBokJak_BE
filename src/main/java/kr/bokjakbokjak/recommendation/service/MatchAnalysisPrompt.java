@@ -23,7 +23,7 @@ final class MatchAnalysisPrompt {
             {"items":[{"topic_code":"...","sentence":"..."}]}
 
             좋은 예
-            {"items":[{"topic_code":"FLOOR_CLEAN","sentence":"두 분 모두 바닥 청소를 자주 하는 편이라 청결 기준이 비슷해요."},{"topic_code":"DISHES","sentence":"사용한 식기를 치우는 시점이 달라요. 언제까지 둘지 미리 정해 두면 좋아요."},{"topic_code":"SLEEP_HABITS","sentence":"상대가 잠버릇 질문에 '잘 모르겠다'고 답했어요. 대화에서 확인해 보세요."}]}
+            {"items":[{"topic_code":"FLOOR_CLEAN","sentence":"두 분 모두 바닥 청소를 자주 하는 편이라 청결 기준이 비슷해요."},{"topic_code":"TEMPERATURE","sentence":"냉난방을 켜 두는 시간이 달라요. 언제 얼마나 켤지 미리 정해 두면 좋아요."},{"topic_code":"SLEEP_HABITS","sentence":"상대가 잠버릇 질문에 '잘 모르겠다'고 답했어요. 대화에서 확인해 보세요."}]}
             """;
 
     private static final Map<MatchLabel, String> LABEL_TEXT = Map.of(

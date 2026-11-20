@@ -56,8 +56,8 @@ class LifestyleSummaryLiveTest {
                                 "바로 버린다", "바로 버려 주면 좋겠다"),
                         topic("BELONGINGS", "PERSONAL_HYGIENE", "개인 청결", "사용한 물건은 언제 정리하나요?",
                                 "바로 정리한다", "그날 안에만 정리하면 괜찮다"),
-                        topic("DISHES", "PERSONAL_HYGIENE", "개인 청결", "사용한 컵이나 그릇은 언제 치우나요?",
-                                "그날 안에 정리한다", "다음 날까지는 괜찮다"),
+                        topic("TEMPERATURE", "TEMPERATURE", "온도", "평소 냉난방은 어떻게 사용하나요?",
+                                "덥거나 추울 때 잠깐 켰다가 끈다", "일정시간 이상 켜두어도 괜찮다"),
                         topic("SMOKING", "SMOKING", "흡연 유무", "흡연을 하나요?",
                                 "비흡연자다", "흡연자와는 같은 방이 어렵다")));
     }

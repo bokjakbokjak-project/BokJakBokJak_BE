@@ -18,7 +18,7 @@ class MatchAnalysisGeneratorTest {
     static final String VALID = """
             {"items":[\
             {"topic_code":"FLOOR_CLEAN","sentence":"두 분 모두 바닥 청소를 자주 해서 청결 기준이 비슷해요."},\
-            {"topic_code":"DISHES","sentence":"식기를 치우는 시점이 달라요. 언제까지 둘지 미리 정해 두면 좋아요."},\
+            {"topic_code":"TEMPERATURE","sentence":"냉난방을 켜 두는 시간이 달라요. 언제 얼마나 켤지 미리 정해 두면 좋아요."},\
             {"topic_code":"SLEEP_HABITS","sentence":"상대가 잠버릇 질문에 '잘 모르겠다'고 답했어요. 대화에서 확인해 보세요."},\
             {"topic_code":"BEDTIME","sentence":"두 분 모두 비슷한 시간에 잠들어서 소등 시간이 비슷해요."}]}""";
 
@@ -35,7 +35,7 @@ class MatchAnalysisGeneratorTest {
                     1. topic_code: FLOOR_CLEAN / 상황: 바닥에 먼지가 보여요. / 판정: 잘 맞음
                     - 나 습관: 매일 / 허용: 주 1회
                     - 상대 습관: 주 2~3회 / 허용: 주 1회
-                    2. topic_code: DISHES""");
+                    2. topic_code: TEMPERATURE""");
         });
     }
 
@@ -47,7 +47,7 @@ class MatchAnalysisGeneratorTest {
         assertThat(analysis.goodPoints()).containsExactly(
                 "두 분 모두 비슷한 시간에 잠들어서 소등 시간이 비슷해요.",
                 "두 분 모두 바닥 청소를 자주 해서 청결 기준이 비슷해요.");
-        assertThat(analysis.adjustPoints()).containsExactly("식기를 치우는 시점이 달라요. 언제까지 둘지 미리 정해 두면 좋아요.");
+        assertThat(analysis.adjustPoints()).containsExactly("냉난방을 켜 두는 시간이 달라요. 언제 얼마나 켤지 미리 정해 두면 좋아요.");
         assertThat(analysis.checkPoints()).containsExactly("상대가 잠버릇 질문에 '잘 모르겠다'고 답했어요. 대화에서 확인해 보세요.");
     }
 
@@ -71,7 +71,7 @@ class MatchAnalysisGeneratorTest {
 
         assertThat(analysis.aiGenerated()).isFalse();
         assertThat(analysis.goodPoints()).containsExactly("잠드는 시간 기준이 비슷해요.", "바닥 청소 기준이 비슷해요.");
-        assertThat(analysis.adjustPoints()).containsExactly("식기 정리 기준이 서로 달라요. 대화에서 미리 정해 두면 좋아요.");
+        assertThat(analysis.adjustPoints()).containsExactly("냉난방 사용 기준이 서로 달라요. 대화에서 미리 정해 두면 좋아요.");
         assertThat(analysis.checkPoints()).containsExactly("잠버릇 질문에 '잘 모르겠다'는 답이 있어요. 대화에서 확인해 보세요.");
     }
 
@@ -94,8 +94,8 @@ class MatchAnalysisGeneratorTest {
         return List.of(
                 item("FLOOR_CLEAN", "바닥에 먼지가 보여요.", MatchLabel.GOOD, "0.3",
                         "매일", "주 1회", "주 2~3회", "주 1회"),
-                item("DISHES", "방 안에 컵이 놓여 있어요.", MatchLabel.NEED_ADJUST, "0.1",
-                        "바로 정리", "그날 안에", "다음 날", "괜찮다"),
+                item("TEMPERATURE", "냉난방을 사용해요.", MatchLabel.NEED_ADJUST, "0.1",
+                        "잠깐 켰다가 끈다", "잠깐 켰다가 꺼줬으면 한다", "계속 켜둔다", "계속 켜두어도 괜찮다"),
                 item("SLEEP_HABITS", "룸메이트가 자고 있어요.", MatchLabel.NEED_CHECK, "0.2",
                         "없다", "없으면 좋겠다", "잘 모르겠다", "상관없다"),
                 item("BEDTIME", "평일 밤이에요.", MatchLabel.GOOD, "0.5",

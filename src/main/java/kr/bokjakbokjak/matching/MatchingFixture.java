@@ -65,13 +65,14 @@ final class MatchingFixture implements UserQueryService, MatchingEngine {
             throw new IllegalArgumentException("The matching fixture supports only the sample pair 7 and 12");
         }
 
-        String firstHabit = "다음 날 정리하기도 한다";
-        String firstTolerance = "그날 안에만 정리하면 괜찮다";
+        String firstHabit = "다음 날 치우기도 한다";
+        String firstTolerance = "그날 안에만 치우면 괜찮다";
         String secondHabit = "이틀 이상 두는 경우도 있다";
-        String secondTolerance = "위생 문제가 없다면 더 두어도 괜찮다";
+        String secondTolerance = "냄새나 위생 문제가 없다면 더 두어도 괜찮다";
 
         var item = new MatchItemDto(
-                "DISHES", "PERSONAL_HYGIENE", "방 안 책상 위에 사용한 컵이나 그릇 같은 식기가 놓여 있어요.",
+                "FOOD_WASTE", "CLEANING",
+                "배달 음식을 먹고 남은 음식과 포장 용기가 방 안에 놓여 있어요. 아직 냄새가 심하게 나지는 않아요.",
                 new BigDecimal("0.5"), MatchLabel.NEED_ADJUST,
                 firstIsViewer ? FIRST_WEIGHT : SECOND_WEIGHT,
                 firstIsViewer ? SECOND_WEIGHT : FIRST_WEIGHT,

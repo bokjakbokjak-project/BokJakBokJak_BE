@@ -50,7 +50,7 @@ public class SurveyMatchingEngine implements MatchingEngine {
     }
 
     /**
-     * @throws IllegalArgumentException 같은 사용자이거나, 없는 사용자이거나, 설문을 완료하지 않은 사용자
+     * @throws IllegalArgumentException 같은 사용자이거나, 없는 사용자이거나, 설문을 제출한 적이 없는 사용자
      */
     @Override
     public MatchResultDto calculate(Long viewerId, Long targetId) {
@@ -65,8 +65,9 @@ public class SurveyMatchingEngine implements MatchingEngine {
     private MatchScoreCalculator.Profile loadProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다: " + userId));
-        if (!user.isSurveyCompleted()) {
-            throw new IllegalArgumentException("설문을 완료하지 않은 사용자입니다: " + userId);
+        // 설문 개편 뒤 다시 설문하기 전인 사용자도 진행 중인 대화의 안건을 만들 수 있도록 예전 답으로 계산한다
+        if (!user.hasSubmittedSurvey()) {
+            throw new IllegalArgumentException("설문을 제출한 적이 없는 사용자입니다: " + userId);
         }
         Map<String, Integer> rankByCategory = weightRepository.findAllByIdUserIdOrderByRankAsc(userId).stream()
                 .collect(Collectors.toMap(UserWeight::getCategoryCode, UserWeight::getRank));

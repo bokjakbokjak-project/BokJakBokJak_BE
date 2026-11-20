@@ -162,20 +162,22 @@ class MySurveyControllerTest {
 
         Map<String, String> changed = answers();
         changed.put("FLOOR_CLEAN_H", "DAILY");
-        String fivePriorities = """
+        String sixPriorities = """
                 [{"category_code":"SMOKING","rank":1},
                  {"category_code":"CLEANING","rank":2},
                  {"category_code":"SLEEP_HABITS","rank":3},
                  {"category_code":"SLEEP_SCHEDULE","rank":4},
-                 {"category_code":"PERSONAL_HYGIENE","rank":5}]""";
+                 {"category_code":"PERSONAL_HYGIENE","rank":5},
+                 {"category_code":"TEMPERATURE","rank":6}]""";
 
-        submit(userId, 1, fivePriorities, changed)
+        submit(userId, 1, sixPriorities, changed)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.revision").value(2));
 
         mvc.perform(get("/api/me/survey").header("Authorization", bearer(userId)))
-                .andExpect(jsonPath("$.data.priorities", hasSize(5)))
+                .andExpect(jsonPath("$.data.priorities", hasSize(6)))
                 .andExpect(jsonPath("$.data.priorities[0].category_code").value("SMOKING"))
+                .andExpect(jsonPath("$.data.priorities[5].category_code").value("TEMPERATURE"))
                 .andExpect(jsonPath("$.data.answers[6].option_code").value("DAILY"));
 
         assertThat(revisionEvents(userId)).containsExactly(1, 2);
@@ -218,7 +220,13 @@ class MySurveyControllerTest {
                 [{"category_code":"CLEANING","rank":1},{"category_code":"ODOR","rank":2},
                  {"category_code":"SLEEP_HABITS","rank":3}]""";
 
-        for (String priorities : List.of(twoOnly, gapInRanks, duplicatedCategory, unknownCategory)) {
+        String seven = """
+                [{"category_code":"SMOKING","rank":1},{"category_code":"CLEANING","rank":2},
+                 {"category_code":"SLEEP_HABITS","rank":3},{"category_code":"SLEEP_SCHEDULE","rank":4},
+                 {"category_code":"PERSONAL_HYGIENE","rank":5},{"category_code":"TEMPERATURE","rank":6},
+                 {"category_code":"ODOR","rank":7}]""";
+
+        for (String priorities : List.of(twoOnly, gapInRanks, duplicatedCategory, unknownCategory, seven)) {
             submit(userId, 0, priorities, answers())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("INVALID_INPUT"))

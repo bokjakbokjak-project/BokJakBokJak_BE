@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.util.Objects;
 import org.springframework.data.domain.Persistable;
 
-/** 사용자가 고른 생활습관 카테고리와 순위 (3~5개). */
+/** 사용자가 고른 생활습관 카테고리와 순위 (3~6개). */
 @Entity
 @Table(name = "user_weight")
 public class UserWeight implements Persistable<UserWeight.Id> {

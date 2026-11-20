@@ -155,6 +155,16 @@ class RecommendationServiceTest {
     }
 
     @Test
+    void viewerWaitingForResurveyMustTakeSurvey() {
+        users.requireResurvey(VIEWER);
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> recommendationService.getRecommendations(VIEWER));
+
+        assertThat(exception.code()).isEqualTo("SURVEY_REQUIRED");
+    }
+
+    @Test
     void unknownViewerIsAskedToTakeSurvey() {
         ApiException exception = assertThrows(ApiException.class,
                 () -> recommendationService.refresh(999L));

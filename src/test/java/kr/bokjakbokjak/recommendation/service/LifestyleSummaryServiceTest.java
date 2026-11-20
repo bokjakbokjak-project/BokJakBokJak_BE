@@ -118,6 +118,23 @@ class LifestyleSummaryServiceTest {
     }
 
     @Test
+    void ownSummaryWaitingForResurveyAsksForSurvey() {
+        users.requireResurvey(USER);
+
+        assertRejected(USER, "SURVEY_REQUIRED", HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void otherUserWaitingForResurveyCanStillBeViewed() {
+        users.addUser(OTHER, "민트초코", 2);
+        users.requireResurvey(OTHER);
+        when(surveyProfileQueryService.getSurveyProfile(OTHER)).thenReturn(profile(2));
+        when(llmClient.complete(any())).thenReturn(Optional.of(AI_RESPONSE));
+
+        assertThat(lifestyleSummaryService.getSummary(USER, OTHER).summary()).isNotBlank();
+    }
+
+    @Test
     void otherUserBeforeSurveyIsNotEligible() {
         users.addUser(OTHER, "민트초코", 0);
 

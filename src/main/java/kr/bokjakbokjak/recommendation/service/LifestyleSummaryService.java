@@ -52,11 +52,14 @@ public class LifestyleSummaryService {
         UserSummaryDto user = userQueryService.getUserSummaries(List.of(userId)).stream()
                 .findFirst()
                 .orElseThrow(() -> new ApiException(ErrorCode.TARGET_WITHDRAWN));
-        if (user.surveyRevision() > 0) {
+        if (userId.equals(viewerId)) {
+            if (!user.surveyCompleted()) {
+                throw new ApiException(ErrorCode.SURVEY_REQUIRED);
+            }
             return;
         }
-        if (userId.equals(viewerId)) {
-            throw new ApiException(ErrorCode.SURVEY_REQUIRED);
+        if (user.surveyRevision() > 0) {
+            return;
         }
         throw new ApiException(ErrorCode.TARGET_NOT_ELIGIBLE.status(), ErrorCode.TARGET_NOT_ELIGIBLE.name(),
                 "생활습관 요약을 볼 수 없는 사용자입니다.");

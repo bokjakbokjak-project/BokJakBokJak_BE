@@ -20,6 +20,7 @@ import kr.bokjakbokjak.room.entity.ChatMessage;
 import kr.bokjakbokjak.room.entity.Matching;
 import kr.bokjakbokjak.room.entity.MatchingStatus;
 import kr.bokjakbokjak.room.entity.MessageType;
+import kr.bokjakbokjak.room.event.AgendaDecidedEvent;
 import kr.bokjakbokjak.room.repository.AgendaRepository;
 import kr.bokjakbokjak.room.repository.ChatMessageRepository;
 import kr.bokjakbokjak.room.repository.MatchingRepository;
@@ -35,9 +36,12 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@RecordApplicationEvents
 class AgendaServiceTest {
     private static final long BOOKMARK = 7L;
     private static final long MINT = 12L;
@@ -49,6 +53,7 @@ class AgendaServiceTest {
     @Autowired AgendaRepository agendaRepository;
     @Autowired ChatMessageRepository chatMessageRepository;
     @Autowired JdbcClient jdbc;
+    @Autowired ApplicationEvents events;
 
     private Long matchingId;
     private Long firstId;
@@ -77,6 +82,15 @@ class AgendaServiceTest {
         agendaRepository.deleteAll();
         matchingRepository.deleteAll();
         users.clear();
+    }
+
+    @Test
+    void decidingPublishesEventForRuleSummaryOnce() {
+        agendaService.decide(MINT, matchingId, firstId);
+        agendaService.decide(BOOKMARK, matchingId, firstId);
+
+        assertThat(events.stream(AgendaDecidedEvent.class))
+                .containsExactly(new AgendaDecidedEvent(matchingId, firstId));
     }
 
     @Test

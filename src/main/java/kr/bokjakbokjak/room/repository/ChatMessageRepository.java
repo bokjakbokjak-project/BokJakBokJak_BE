@@ -3,6 +3,7 @@ package kr.bokjakbokjak.room.repository;
 import java.util.Collection;
 import java.util.List;
 import kr.bokjakbokjak.room.entity.ChatMessage;
+import kr.bokjakbokjak.room.entity.MessageType;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,6 +15,8 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     List<ChatMessage> findAllByMatchingIdAndIdLessThanOrderByIdDesc(Long matchingId, Long beforeId, Limit limit);
 
     List<ChatMessage> findAllByMatchingIdOrderByIdDesc(Long matchingId, Limit limit);
+
+    List<ChatMessage> findAllByAgendaIdAndTypeOrderByIdDesc(Long agendaId, MessageType type, Limit limit);
 
     @Query("""
             select c from ChatMessage c

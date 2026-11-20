@@ -60,14 +60,14 @@ public class MySurveyService {
     public MySurveyResponse getMySurvey(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
-        if (!user.isSurveyCompleted()) {
-            return new MySurveyResponse(0, false, null, List.of(), List.of());
-        }
-
+        // 우선순위는 온보딩 때 저장되므로 설문 전에도 돌려준다
         List<SurveySubmitRequest.Priority> priorities = weightRepository.findAllByIdUserIdOrderByRankAsc(userId)
                 .stream()
                 .map(weight -> new SurveySubmitRequest.Priority(weight.getCategoryCode(), weight.getRank()))
                 .toList();
+        if (!user.isSurveyCompleted()) {
+            return new MySurveyResponse(0, false, null, priorities, List.of());
+        }
 
         Map<String, String> optionByQuestion = answerRepository.findAllByIdUserId(userId).stream()
                 .collect(Collectors.toMap(SurveyAnswer::getQuestionCode, SurveyAnswer::getOptionCode));

@@ -24,8 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class ProfileService {
-    private static final int MAX_NICKNAME_LENGTH = 20;
-
     private final UserRepository userRepository;
     private final SurveyProfileQueryService surveyProfileQueryService;
     private final SurveyCategoryRepository categoryRepository;
@@ -81,10 +79,8 @@ public class ProfileService {
 
     @Transactional
     public NicknameResponse changeNickname(Long userId, NicknameRequest request) {
-        String nickname = request.nickname() == null ? "" : request.nickname().strip();
-        if (nickname.isEmpty() || nickname.length() > MAX_NICKNAME_LENGTH) {
-            throw new ApiException(ErrorCode.INVALID_NICKNAME, Map.of("nickname", "INVALID_FORMAT"));
-        }
+        String nickname = NicknamePolicy.normalize(request.nickname())
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_NICKNAME, Map.of("nickname", "INVALID_FORMAT")));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
         user.changeNickname(nickname);

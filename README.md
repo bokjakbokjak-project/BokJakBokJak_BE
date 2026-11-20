@@ -42,13 +42,16 @@ export JWT_SECRET_BASE64="$(openssl rand -base64 32)"
 
 JPA 엔티티가 생성·수정 시각이 필요하면 `BaseEntity`를 상속합니다. `created_at`과 `updated_at`은 JPA Auditing으로 기록됩니다.
 
-`GET /api/health`를 실행할 수 있습니다. 설문 문항은 `GET /api/surveys/current`, 내 설문 응답은 `GET`·`PUT /api/me/survey`로 조회·저장합니다(로그인 필요). 설문 차수가 올라가면 `SurveyRevisionChangedEvent(userId, revision)`를 발행합니다. `POST /api/auth/login`은 Google 로그인 구현을 연결할 공개 경로로 설정했습니다. Google ID 토큰 검증, PostgreSQL 저장 및 실제 매칭 점수 계산은 후속 기능에서 구현합니다.
+`GET /api/health`를 실행할 수 있습니다. 설문 문항은 `GET /api/surveys/current`, 내 설문 응답은 `GET`·`PUT /api/me/survey`로 조회·저장합니다(로그인 필요). 우선순위는 온보딩 때 저장되므로 설문 전에도 `GET /api/me/survey`의 `priorities`에 들어 있습니다. 설문 차수가 올라가면 `SurveyRevisionChangedEvent(userId, revision)`를 발행합니다. `POST /api/auth/login`은 Google 로그인 구현을 연결할 공개 경로로 설정했습니다. Google ID 토큰 검증, PostgreSQL 저장 및 실제 매칭 점수 계산은 후속 기능에서 구현합니다.
 
 ## 로그인과 토큰
 
 - `POST /api/auth/login`: FE가 Google Identity Services에서 받은 ID 토큰(`id_token`)을 보내면 서명·발급자·대상(`GOOGLE_CLIENT_ID`)·만료를 검증하고 서비스 토큰을 발급합니다. 처음 로그인하면 회원을 만듭니다.
   - 학교 Google Workspace 계정만 받습니다. ID 토큰의 `hd`가 있어야 하고, `hd`나 이메일 도메인 중 하나가 `university_domain`에 등록된 학교여야 합니다. 학교 추가는 SQL로 도메인만 넣으면 됩니다.
   - 응답의 `next_step`은 온보딩 전 `ONBOARDING`, 설문 전 `SURVEY`, 둘 다 마치면 `HOME`입니다.
+- `GET /api/me/status`는 로그인한 사용자의 현재 상태를 돌려줍니다. FE는 앱 시작이나 첫 화면 진입 때 호출해 이동할 화면을 정합니다.
+  - `onboarding_completed`, `survey_completed`, `next_step`(로그인 응답과 같은 기준), `matched`, `matching_id`(최종 매칭 전이면 null)
+  - `survey_update_required`는 설문 문항이 바뀌어 다시 해야 하는 경우 true입니다. 지금은 항상 false입니다.
 - 액세스 토큰은 30분, 리프레시 토큰은 14일입니다. `POST /api/auth/refresh`로 두 토큰을 모두 새로 받고, 쓴 리프레시 토큰은 바로 폐기됩니다.
 - `POST /api/auth/logout`은 현재 액세스 토큰을 남은 시간 동안 차단하고 리프레시 토큰을 지웁니다.
 - `POST /api/auth/dev-login`은 개발·시연용입니다. `X-Dev-Login-Key` 헤더가 `DEV_LOGIN_KEY`와 같고 대상이 테스트 유저일 때만 토큰을 줍니다.
@@ -73,7 +76,7 @@ JPA 엔티티가 생성·수정 시각이 필요하면 `BaseEntity`를 상속합
   - 주제마다 습관 질문 문구(`question`), 나의 성향(`habit_answer`), 원하는 성향(`tolerance_answer`)을 선택지 원문으로 줍니다. 설문 전이면 409입니다.
   - 나이(`age`)는 한국식(올해 − 출생년도 + 1)이며 추천 카드와 같은 `KoreanAge`를 씁니다.
 - `GET /api/roommates/{candidate_id}/profile`은 같은 구조로 후보 본인의 답변만 줍니다. 같은 학교이고 설문을 마친 활성 회원만 볼 수 있고, 본인 ID는 400, 그 외는 404입니다. 매칭율은 추천 리스트 값을 그대로 씁니다.
-- `PATCH /api/me/profile`은 닉네임만 바꿉니다(앞뒤 공백 제거 후 1~20자). 설문 차수와 매칭 점수는 그대로입니다.
+- `PATCH /api/me/profile`은 닉네임만 바꿉니다(앞뒤 공백 제거 후 1~20자, 줄바꿈·제어문자·보이지 않는 문자 불가, 온보딩과 같은 규칙). 설문 차수와 매칭 점수는 그대로입니다.
 
 ## 채희님 연동용 내부 메서드
 
@@ -93,6 +96,7 @@ B 모듈은 `kr.bokjakbokjak.matching`의 인터페이스를 생성자로 주입
 - `findCandidates`는 조회한 사람과 같은 학교·같은 성별·같은 기숙사 방 타입이고, 온보딩과 설문을 마친 활성 회원을 돌려줍니다. 본인은 빠집니다. 최종 매칭 완료자 제외와 정렬은 B에서 처리합니다.
 - 조회한 사람이 비활성이거나 기숙사 정보·설문이 비어 있으면 빈 목록입니다. 없는 사용자는 `IllegalArgumentException`을 던집니다.
 - `getUserSummaries`는 요청한 순서대로 중복 없이 돌려줍니다. 탈퇴 회원도 `WITHDRAWN` 상태로 포함하고, 없는 ID는 생략합니다.
+- 설문을 마쳤는지는 `surveyCompleted`로 확인합니다. `surveyRevision`은 캐시가 최신인지 비교할 때만 씁니다.
 - `topCategories`는 1~3순위 카테고리 코드입니다. `entryYear`는 학번 앞 4자리입니다.
 - `birthYear`로 나이를 보여줄 때는 한국식 나이(올해 − 출생년도 + 1)를 씁니다. 2026년에 2007년생은 20세입니다.
 - 회원 상태는 `ACTIVE`, `WITHDRAWN`(탈퇴), `SUSPENDED`(이용 제한)입니다. 탈퇴해도 행은 지우지 않고 상태만 바꿉니다.

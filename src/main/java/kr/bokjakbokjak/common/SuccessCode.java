@@ -15,6 +15,7 @@ public enum SuccessCode {
     MY_PROFILE_SUCCESS("내 성향 프로필을 조회했습니다."),
     ROOMMATE_PROFILE_SUCCESS("상대 프로필을 조회했습니다."),
     NICKNAME_UPDATE_SUCCESS("닉네임을 변경했습니다."),
+    MY_STATUS_SUCCESS("내 상태를 조회했습니다."),
 
     RECOMMENDATION_LIST_SUCCESS("추천 리스트를 조회했습니다."),
     RECOMMENDATION_REFRESH_SUCCESS("추천 리스트를 새로고침했습니다."),

@@ -3,7 +3,7 @@ package kr.bokjakbokjak.matching.engine;
 /** 카테고리 가중치: 모든 카테고리 기본 10점 + 선택 순위 보너스. */
 final class CategoryWeights {
     static final double BASE = 10;
-    private static final double[] RANK_BONUS = {12, 6, 2, 1, 0.5};
+    private static final double[] RANK_BONUS = {12, 6, 2, 1, 0.5, 0.25};
 
     private CategoryWeights() {
     }

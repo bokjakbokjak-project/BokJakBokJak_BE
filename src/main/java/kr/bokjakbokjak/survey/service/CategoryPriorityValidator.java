@@ -17,8 +17,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class CategoryPriorityValidator {
     private static final int MIN_PRIORITIES = 3;
-    private static final int MAX_PRIORITIES = 5;
-    private static final String PRIORITIES_MESSAGE = "서로 다른 카테고리를 3~5개 선택하고 1순위부터 연속으로 지정해주세요.";
+    private static final int MAX_PRIORITIES = 6;
+    private static final String PRIORITIES_MESSAGE = "서로 다른 카테고리를 3~6개 선택하고 1순위부터 연속으로 지정해주세요.";
 
     private final SurveyCategoryRepository categoryRepository;
 
@@ -26,7 +26,7 @@ public class CategoryPriorityValidator {
         this.categoryRepository = categoryRepository;
     }
 
-    /** 서로 다른 카테고리 3~5개, 1순위부터 연속인지 확인하고 카테고리별 순위를 돌려준다. */
+    /** 서로 다른 카테고리 3~6개, 1순위부터 연속인지 확인하고 카테고리별 순위를 돌려준다. */
     public Map<String, Integer> validate(List<SurveySubmitRequest.Priority> priorities) {
         Set<String> categoryCodes = categoryRepository.findAll().stream()
                 .map(SurveyCategory::getCode)

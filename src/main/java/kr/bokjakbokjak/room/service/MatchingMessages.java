@@ -23,4 +23,16 @@ final class MatchingMessages {
     static String partnerMatchedElsewhere() {
         return "상대가 다른 분과 매칭이 완료되었어요.";
     }
+
+    static String endedNotification(String nickname) {
+        return "%s님이 대화를 중지했어요.".formatted(nickname);
+    }
+
+    static String matchedElsewhereNotification(String nickname) {
+        return "%s님이 다른 분과 매칭되어 대화가 종료됐어요.".formatted(nickname);
+    }
+
+    static String agendasResetNotification(String nickname) {
+        return "%s님이 설문을 수정해서 안건을 새로 준비해요.".formatted(nickname);
+    }
 }

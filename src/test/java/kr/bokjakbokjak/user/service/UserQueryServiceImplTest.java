@@ -100,6 +100,7 @@ class UserQueryServiceImplTest {
         assertThat(summary.birthYear()).isEqualTo(2004);
         assertThat(summary.status()).isEqualTo("ACTIVE");
         assertThat(summary.surveyRevision()).isEqualTo(1);
+        assertThat(summary.surveyCompleted()).isTrue();
         assertThat(summary.topCategories()).containsExactly("CLEANING", "SLEEP_SCHEDULE", "SMOKING");
     }
 

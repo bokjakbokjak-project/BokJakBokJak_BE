@@ -127,11 +127,12 @@ class ProfileControllerTest {
     }
 
     @Test
-    void nicknameMustBeOneToTwentyCharacters() throws Exception {
+    void nicknameMustBeOneToTwentyVisibleCharacters() throws Exception {
         long userId = createUser("DONGGUK", 0, "ACTIVE");
 
         for (String body : new String[] {
-                "{\"nickname\":\"   \"}", "{\"nickname\":\"" + "가".repeat(21) + "\"}", "{}"}) {
+                "{\"nickname\":\"   \"}", "{\"nickname\":\"" + "가".repeat(21) + "\"}", "{}",
+                "{\"nickname\":\"복작\\n이\"}", "{\"nickname\":\"복작\u200B\"}", "{\"nickname\":\"\u3164\"}"}) {
             changeNickname(userId, body)
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("INVALID_NICKNAME"))

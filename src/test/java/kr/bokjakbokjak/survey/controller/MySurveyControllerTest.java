@@ -72,6 +72,23 @@ class MySurveyControllerTest {
     }
 
     @Test
+    void returnsOnboardingPrioritiesBeforeFirstSubmission() throws Exception {
+        long userId = createUser(true);
+        jdbc.sql("""
+                        insert into user_weight (user_id, category_code, priority_rank)
+                        values (?, 'CLEANING', 1), (?, 'SMOKING', 2), (?, 'SLEEP_SCHEDULE', 3)""")
+                .params(userId, userId, userId)
+                .update();
+
+        mvc.perform(get("/api/me/survey").header("Authorization", bearer(userId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.survey_completed").value(false))
+                .andExpect(jsonPath("$.data.priorities[*].category_code")
+                        .value(contains("CLEANING", "SMOKING", "SLEEP_SCHEDULE")))
+                .andExpect(jsonPath("$.data.answers", hasSize(0)));
+    }
+
+    @Test
     void firstSubmissionSavesAnswersAndPublishesRevision() throws Exception {
         long userId = createUser(true);
 

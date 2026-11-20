@@ -9,8 +9,10 @@ import kr.bokjakbokjak.room.dto.AgendaDecideResponse;
 import kr.bokjakbokjak.room.entity.Agenda;
 import kr.bokjakbokjak.room.entity.ChatMessage;
 import kr.bokjakbokjak.room.entity.Matching;
+import kr.bokjakbokjak.room.event.AgendaDecidedEvent;
 import kr.bokjakbokjak.room.repository.AgendaRepository;
 import kr.bokjakbokjak.room.repository.ChatMessageRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,13 +22,16 @@ public class AgendaService {
     private final AgendaRepository agendaRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatPartnerReader userReader;
+    private final ApplicationEventPublisher eventPublisher;
 
     AgendaService(MatchingReader matchingReader, AgendaRepository agendaRepository,
-            ChatMessageRepository chatMessageRepository, ChatPartnerReader userReader) {
+            ChatMessageRepository chatMessageRepository, ChatPartnerReader userReader,
+            ApplicationEventPublisher eventPublisher) {
         this.matchingReader = matchingReader;
         this.agendaRepository = agendaRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.userReader = userReader;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -47,6 +52,7 @@ public class AgendaService {
             chatMessageRepository.save(ChatMessage.system(matchingId,
                     AgendaMessages.decided(userReader.read(userId).nickname()), agendaId));
             nextOf(agendas, decided).ifPresent(next -> startNext(matchingId, next));
+            eventPublisher.publishEvent(new AgendaDecidedEvent(matchingId, agendaId));
             return toResponse(decided, agendas);
         }
         List<Agenda> agendas = agendaRepository.findAllByMatchingIdOrderBySeqAsc(matchingId);

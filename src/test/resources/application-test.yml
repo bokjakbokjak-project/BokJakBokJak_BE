@@ -9,3 +9,4 @@ spring:
 app:
   agenda:
     auto-prepare: false
+    auto-summarize: false

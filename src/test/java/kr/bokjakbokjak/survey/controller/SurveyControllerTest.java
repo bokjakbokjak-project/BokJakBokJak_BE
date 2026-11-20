@@ -87,6 +87,10 @@ class SurveyControllerTest {
                 .andExpect(jsonPath("$.data.topics[6].questions[1].options[3].label")
                         .value("흡연자와는 같은 방이 어렵다"))
                 .andExpect(jsonPath("$.data.topics[7].questions[0].question_code").value("TEMPERATURE_H"))
+                .andExpect(jsonPath("$.data.topics[7].questions[0].prompt")
+                        .value("평소 냉난방과 관련해 내 경험과 가까운 것을 골라주세요"))
+                .andExpect(jsonPath("$.data.topics[7].questions[1].prompt")
+                        .value("룸메이트의 냉난방 습관 중, 함께 지내기 힘들 것 같은 것을 골라 주세요."))
                 .andExpect(jsonPath("$.data.topics[7].questions[0].options[*].option_code").value(contains(
                         "ALWAYS_ON", "LONG", "SHORT", "RARELY")))
                 .andExpect(jsonPath("$.data.topics[7].questions[1].options[*].option_code").value(contains(

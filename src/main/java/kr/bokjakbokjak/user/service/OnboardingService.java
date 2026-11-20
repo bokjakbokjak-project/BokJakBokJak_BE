@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class OnboardingService {
-    private static final int MAX_NICKNAME_LENGTH = 20;
     private static final int MIN_BIRTH_YEAR = 1950;
     private static final ZoneId SEOUL = ZoneId.of("Asia/Seoul");
 
@@ -79,11 +78,8 @@ public class OnboardingService {
     }
 
     private static String validNickname(String nickname) {
-        String stripped = nickname.strip();
-        if (stripped.isEmpty() || stripped.length() > MAX_NICKNAME_LENGTH) {
-            throw invalid("nickname", "이름은 공백을 빼고 1~20자로 입력해주세요.");
-        }
-        return stripped;
+        return NicknamePolicy.normalize(nickname)
+                .orElseThrow(() -> invalid("nickname", "이름은 공백을 빼고 1~20자로, 줄바꿈이나 보이지 않는 문자 없이 입력해주세요."));
     }
 
     private static int validBirthYear(int birthYear) {

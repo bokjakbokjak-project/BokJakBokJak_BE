@@ -1,6 +1,6 @@
 # 🏠 복작복작 BE
 
-> 상황형 설문으로 생활습관을 비교해 기숙사 룸메이트를 추천하고, AI가 함께 지낼 규칙 정하기를 돕는 서비스의 백엔드입니다.
+> 생활습관의 언어를 통일하고, 서로의 조율 가능성으로 매칭해 입주 전 오해와 갈등을 줄이는 룸메이트 매칭 서비스의 백엔드입니다.
 
 ![Java](https://img.shields.io/badge/Java_21-007396?style=flat-square&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot_4.1-6DB33F?style=flat-square&logo=springboot&logoColor=white)
@@ -10,7 +10,7 @@
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Azure OpenAI](https://img.shields.io/badge/Azure_OpenAI-412991?style=flat-square&logo=openai&logoColor=white)
 
-멋쟁이사자처럼 4호선톤 · Team 16
+멋쟁이사자처럼 4호선톤 · Team 16 본가가고싶다
 
 - 서비스: https://bok-jak-bok-jak-fe.vercel.app
 - API 문서(Swagger): 백엔드 주소의 `/swagger-ui.html`

@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Base64;
 import kr.bokjakbokjak.common.ApiException;
+import kr.bokjakbokjak.notification.entity.NotificationType;
+import kr.bokjakbokjak.notification.repository.NotificationRepository;
 import kr.bokjakbokjak.room.dto.MatchingEndResponse;
 import kr.bokjakbokjak.room.entity.EndReason;
 import kr.bokjakbokjak.room.entity.Matching;
@@ -35,6 +37,7 @@ class MatchingEndServiceTest {
     @Autowired FakeUserQueryService users;
     @Autowired MatchingRepository matchingRepository;
     @Autowired ChatMessageRepository chatMessageRepository;
+    @Autowired NotificationRepository notificationRepository;
     @Autowired JdbcClient jdbc;
 
     private Long matchingId;
@@ -55,6 +58,7 @@ class MatchingEndServiceTest {
     @AfterEach
     void cleanUp() {
         chatMessageRepository.deleteAll();
+        notificationRepository.deleteAll();
         matchingRepository.deleteAll();
         users.clear();
     }
@@ -72,6 +76,18 @@ class MatchingEndServiceTest {
             assertThat(message.getType()).isEqualTo(MessageType.SYSTEM);
             assertThat(message.getMatchingId()).isEqualTo(matchingId);
             assertThat(message.getContent()).isEqualTo("민트초코님이 매칭을 중지했어요.");
+        });
+    }
+
+    @Test
+    void endNotifiesPartner() {
+        matchingEndService.end(MINT, matchingId);
+
+        assertThat(notificationRepository.findAll()).singleElement().satisfies(notification -> {
+            assertThat(notification.getReceiverId()).isEqualTo(BOOKMARK);
+            assertThat(notification.getMatchingId()).isEqualTo(matchingId);
+            assertThat(notification.getType()).isEqualTo(NotificationType.MATCHING_ENDED);
+            assertThat(notification.getContent()).isEqualTo("민트초코님이 대화를 중지했어요.");
         });
     }
 

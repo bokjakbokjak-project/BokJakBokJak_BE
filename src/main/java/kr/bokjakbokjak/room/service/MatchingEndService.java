@@ -2,6 +2,8 @@ package kr.bokjakbokjak.room.service;
 
 import kr.bokjakbokjak.common.ApiException;
 import kr.bokjakbokjak.common.ErrorCode;
+import kr.bokjakbokjak.notification.entity.NotificationType;
+import kr.bokjakbokjak.notification.service.NotificationSender;
 import kr.bokjakbokjak.room.dto.MatchingEndResponse;
 import kr.bokjakbokjak.room.entity.ChatMessage;
 import kr.bokjakbokjak.room.entity.Matching;
@@ -17,13 +19,16 @@ public class MatchingEndService {
     private final MatchingRepository matchingRepository;
     private final ChatMessageRepository chatMessageRepository;
     private final ChatPartnerReader userReader;
+    private final NotificationSender notificationSender;
 
     MatchingEndService(MatchingReader matchingReader, MatchingRepository matchingRepository,
-            ChatMessageRepository chatMessageRepository, ChatPartnerReader userReader) {
+            ChatMessageRepository chatMessageRepository, ChatPartnerReader userReader,
+            NotificationSender notificationSender) {
         this.matchingReader = matchingReader;
         this.matchingRepository = matchingRepository;
         this.chatMessageRepository = chatMessageRepository;
         this.userReader = userReader;
+        this.notificationSender = notificationSender;
     }
 
     @Transactional
@@ -38,8 +43,10 @@ public class MatchingEndService {
         } catch (OptimisticLockingFailureException exception) {
             throw notChatting();
         }
-        chatMessageRepository.save(ChatMessage.system(matchingId,
-                MatchingMessages.endedBy(userReader.read(userId).nickname()), null));
+        String nickname = userReader.read(userId).nickname();
+        chatMessageRepository.save(ChatMessage.system(matchingId, MatchingMessages.endedBy(nickname), null));
+        notificationSender.send(matching.partnerOf(userId), matchingId, NotificationType.MATCHING_ENDED,
+                MatchingMessages.endedNotification(nickname));
         return MatchingEndResponse.from(matching);
     }
 

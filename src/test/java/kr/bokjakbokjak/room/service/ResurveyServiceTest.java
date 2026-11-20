@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import kr.bokjakbokjak.common.SurveyRevisionChangedEvent;
+import kr.bokjakbokjak.notification.entity.NotificationType;
 import kr.bokjakbokjak.notification.repository.NotificationRepository;
 import kr.bokjakbokjak.room.dto.ChatRoomResponse;
 import kr.bokjakbokjak.room.dto.MatchingConfirmResponse;
@@ -105,6 +106,12 @@ class ResurveyServiceTest {
                 tuple(MessageType.USER, "안녕하세요"),
                 tuple(MessageType.SYSTEM, "책갈피님이 설문을 수정해서 안건을 새로 준비할게요."));
         assertThat(events.stream(AgendasResetEvent.class)).containsExactly(new AgendasResetEvent(matchingId));
+        assertThat(notificationRepository.findAll()).singleElement().satisfies(notification -> {
+            assertThat(notification.getReceiverId()).isEqualTo(MINT);
+            assertThat(notification.getMatchingId()).isEqualTo(matchingId);
+            assertThat(notification.getType()).isEqualTo(NotificationType.AGENDAS_RESET);
+            assertThat(notification.getContent()).isEqualTo("책갈피님이 설문을 수정해서 안건을 새로 준비해요.");
+        });
     }
 
     @Test

@@ -1,13 +1,14 @@
 package kr.bokjakbokjak.auth.service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import kr.bokjakbokjak.auth.config.AuthProperties;
+import kr.bokjakbokjak.auth.dto.DevLoginRequest;
 import kr.bokjakbokjak.auth.dto.LoginResponse;
 import kr.bokjakbokjak.auth.dto.TokenResponse;
 import kr.bokjakbokjak.auth.google.GoogleIdTokenVerifier;
@@ -36,6 +37,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthTokenStore tokenStore;
     private final AuthProperties properties;
+    private final DevAccessGuard devAccessGuard;
 
     public AuthService(
             GoogleIdTokenVerifier googleVerifier,
@@ -44,7 +46,8 @@ public class AuthService {
             UserRegistrar userRegistrar,
             JwtService jwtService,
             AuthTokenStore tokenStore,
-            AuthProperties properties) {
+            AuthProperties properties,
+            DevAccessGuard devAccessGuard) {
         this.googleVerifier = googleVerifier;
         this.domainRepository = domainRepository;
         this.userRepository = userRepository;
@@ -52,6 +55,7 @@ public class AuthService {
         this.jwtService = jwtService;
         this.tokenStore = tokenStore;
         this.properties = properties;
+        this.devAccessGuard = devAccessGuard;
     }
 
     /** Google 학교 계정으로 로그인한다. 처음이면 회원을 만든다. */
@@ -78,19 +82,10 @@ public class AuthService {
         tokenStore.revokeRefreshToken(refreshToken, accessClaims.userId());
     }
 
-    /** 개발·시연용. 키가 맞고 테스트 유저일 때만 토큰을 준다. */
-    public LoginResponse devLogin(String key, Long userId) {
-        if (!properties.devLoginEnabled()) {
-            throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND);
-        }
-        if (key == null || !MessageDigest.isEqual(
-                key.getBytes(StandardCharsets.UTF_8), properties.devLoginKey().getBytes(StandardCharsets.UTF_8))) {
-            throw new ApiException(ErrorCode.INVALID_DEV_LOGIN_KEY);
-        }
-        User user = userRepository.findById(userId)
-                .filter(User::isTestUser)
-                .orElseThrow(() -> new ApiException(ErrorCode.NOT_TEST_USER));
-        return issue(requireActive(user));
+    /** 개발·시연용. 키가 맞고 테스트 유저일 때만 토큰을 준다. user_id와 nickname 중 하나로 찾는다. */
+    public LoginResponse devLogin(String key, DevLoginRequest request) {
+        devAccessGuard.check(key);
+        return issue(requireActive(findTestUser(request)));
     }
 
     /** hd가 있어야 학교·회사 Google Workspace 계정이다. hd나 이메일 도메인 중 하나가 등록된 학교면 통과 */
@@ -118,6 +113,26 @@ public class AuthService {
             // 같은 계정의 첫 로그인이 동시에 들어오면 먼저 만든 회원을 쓴다
             return userRepository.findByGoogleSub(identity.subject()).orElseThrow(() -> exception);
         }
+    }
+
+    private User findTestUser(DevLoginRequest request) {
+        boolean byId = request.userId() != null;
+        boolean byNickname = request.nickname() != null && !request.nickname().isBlank();
+        if (byId == byNickname) {
+            throw new ApiException(ErrorCode.INVALID_INPUT,
+                    Map.of("user_id", "user_id와 nickname 중 하나만 입력해주세요."));
+        }
+        if (byId) {
+            return userRepository.findById(request.userId())
+                    .filter(User::isTestUser)
+                    .orElseThrow(() -> new ApiException(ErrorCode.NOT_TEST_USER));
+        }
+        List<User> users = userRepository.findAllByTestUserTrueAndNickname(request.nickname().strip());
+        if (users.size() > 1) {
+            throw new ApiException(ErrorCode.INVALID_INPUT,
+                    Map.of("nickname", "같은 닉네임의 테스트 유저가 여러 명입니다. user_id로 로그인해주세요."));
+        }
+        return users.stream().findFirst().orElseThrow(() -> new ApiException(ErrorCode.NOT_TEST_USER));
     }
 
     private static User requireActive(User user) {

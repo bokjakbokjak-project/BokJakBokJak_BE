@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface AgendaRepository extends JpaRepository<Agenda, Long> {
     List<Agenda> findAllByMatchingIdOrderBySeqAsc(Long matchingId);
@@ -28,6 +29,11 @@ public interface AgendaRepository extends JpaRepository<Agenda, Long> {
             """)
     int decideIfDiscussing(@Param("id") Long id, @Param("userId") Long userId,
             @Param("decidedAt") Instant decidedAt);
+
+    @Transactional
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update Agenda a set a.ruleSummary = :rule where a.id = :id and a.ruleSummary is null")
+    int recordRuleIfEmpty(@Param("id") Long id, @Param("rule") String rule);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from Agenda a where a.matchingId = :matchingId")

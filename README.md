@@ -1,5 +1,122 @@
-# BokJakBokJak_BE
-복작복작 - 대학생 기숙사 룸메이트 매칭 서비스 Backend
+# 복작복작 BE
+
+> 상황형 설문으로 생활습관을 비교해 기숙사 룸메이트를 추천하고, AI가 함께 지낼 규칙 정하기를 돕는 서비스의 백엔드입니다.
+
+- 서비스: https://bok-jak-bok-jak-fe.vercel.app
+- API 문서(Swagger): 백엔드 주소의 `/swagger-ui.html`
+- FE 레포: https://github.com/bokjakbokjak-project/BokJakBokJak_FE
+
+## 왜 만들었나요
+
+기숙사 룸메이트 갈등은 대부분 취침 시간, 알람, 청소, 흡연, 냉난방 같은 생활습관 차이에서 생깁니다. 복작복작은 같은 학교·성별·기숙사 학생 중에서 **내 습관과 상대가 허용하는 범위**가 잘 맞는 사람을 추천하고, 대화 단계에서 서로 다른 습관을 규칙으로 미리 정할 수 있게 돕습니다.
+
+## 체험하기
+
+학교 구글 계정이 없어도 이름만으로 체험할 수 있습니다.
+
+1. 서비스 접속 후 **체험하기**에서 이름 입력
+2. 생활습관 우선순위(3~6개)와 상황형 설문 16문항 응답
+3. 홈에서 추천 룸메이트와 매칭률 확인
+4. 후보의 AI 매칭 분석과 상세 프로필 확인
+5. 대화 신청 후 채팅방에서 AI가 만든 생활 규칙 안건 확인
+
+시크릿 창에서 다른 이름으로 한 번 더 체험하면 두 계정끼리 대화, 안건 확정, 최종 매칭까지 확인할 수 있습니다. 체험 계정은 테스트용 가상 사용자(페르소나)와 같은 후보군(동국대 남산학사 2인실)으로 만들어집니다.
+
+## 주요 기능
+
+| 기능 | 설명 |
+| --- | --- |
+| 학교 계정 로그인 | Google 학교 계정(`hd`)으로 학교를 확인하고, 같은 학교끼리만 매칭 |
+| 온보딩 | 학과, 학번, 성별, 기숙사·방 타입, 생활습관 우선순위 |
+| 상황형 설문 | 6개 카테고리, 8개 주제. 주제마다 "내 습관"과 "룸메이트에게 허용하는 범위"를 묻는 16문항 |
+| 룸메이트 추천 | 같은 학교·성별·기숙사·방 타입 후보를 매칭률 순으로 추천 |
+| AI 매칭 분석 · 생활습관 요약 | 두 사람의 설문을 바탕으로 잘 맞는 점, 조율할 점을 AI가 정리 |
+| 대화와 안건 조율 | 대화 신청 즉시 채팅방 생성, 습관이 다른 주제를 AI가 안건으로 만들어 하나씩 확정 |
+| 최종 매칭 | 두 사람이 모두 확정하면 매칭 완료, 다른 대화는 자동 종료 |
+| 알림 | 대화 신청, 상대 확정, 최종 매칭, 대화 중지 등 |
+| 공유하기 | 내 설문 결과를 링크로 공유하고, 받은 사람은 학교와 상관없이 매칭률 확인 |
+| 재설문 | 설문 문항이 바뀌면 기존 회원을 다시 설문하게 하고 예전 답을 미리 채워 줌 |
+
+## 기술 스택
+
+| 구분 | 사용 기술 |
+| --- | --- |
+| 언어·프레임워크 | Java 21, Spring Boot 4.1 (Web MVC, Security, Data JPA, Validation) |
+| 데이터 | PostgreSQL, Flyway, Redis(리프레시 토큰, 추천 캐시) |
+| 인증 | Google ID 토큰 검증, 자체 JWT(액세스 30분, 리프레시 14일) |
+| AI | Azure OpenAI (설정이 없으면 설문 기반 기본 문구로 동작) |
+| 문서 | springdoc-openapi (Swagger UI) |
+| 테스트 | JUnit 5, Spring Boot Test, H2 |
+| 배포 | Docker, GitHub Actions(PR 테스트, main push 시 자동 배포), Nginx, Azure VM |
+
+## 시스템 구조
+
+```mermaid
+flowchart LR
+    User[사용자] --> FE[FE<br/>React · Vercel]
+    FE -- REST API --> Nginx
+    subgraph VM[Azure VM]
+        Nginx --> BE[Spring Boot<br/>Docker]
+    end
+    BE --> PG[(PostgreSQL)]
+    BE --> Redis[(Redis)]
+    BE --> AI[Azure OpenAI]
+    FE -. Google 로그인 .-> Google[Google Identity]
+    BE -. ID 토큰 검증 .-> Google
+    GHA[GitHub Actions] -- main push 시 빌드·배포 --> BE
+```
+
+## 매칭 알고리즘
+
+1. **주제별 판정**: 상대의 실제 습관이 내 허용범위 안이면 1점. 벗어나면 선택지를 실제 값(취침 시각, 알람 횟수, 청소 간격, 치우기까지 걸리는 시간)으로 바꿔 벗어난 정도만큼 깎습니다. 예: 24시에 자는 사람 ↔ 23시까지 허용하는 사람 → 1시간 늦음 → 0.67점
+2. **가중치**: 모든 카테고리 기본 10점에 내가 고른 우선순위 보너스(1순위 +12 … 6순위 +0.25)를 더합니다.
+3. **방향별 점수**: 내 기준으로 본 상대 점수와 상대 기준으로 본 내 점수를 각각 가중 평균합니다.
+4. **최종 매칭률**: 두 방향의 조화평균. 한쪽만 만족하는 조합은 낮게 나옵니다. 흡연자를 받을 수 없는 사람과 흡연자가 만나면 0.6을 곱합니다.
+
+"잘 모르겠다", 조건부 허용("큰 소음이 아니라면 상관없다")은 점수와 별도로 **확인 필요** 라벨을 붙여 대화 안건으로 이어집니다. 자세한 계산은 아래 [매칭 점수 계산](#매칭-점수-계산)에 있습니다.
+
+## 주요 API
+
+전체 명세는 Swagger에서 볼 수 있습니다. 응답은 `success, code, message, data` 형식이고 필드명은 snake_case입니다.
+
+| 영역 | API |
+| --- | --- |
+| 인증 | `POST /api/auth/login` 구글 로그인 · `POST /api/auth/guest-login` 체험 로그인 · `POST /api/auth/refresh` · `POST /api/auth/logout` |
+| 회원 | `GET /api/me/status` 다음 화면 · `PUT /api/me/onboarding` · `GET`·`PATCH /api/me/profile` |
+| 기숙사 | `GET /api/dormitories?keyword=` · `POST /api/dormitories` |
+| 설문 | `GET /api/surveys/current` · `GET`·`PUT /api/me/survey` |
+| 추천 | `GET /api/recommendations` · `POST /api/recommendations/refresh` · `GET /api/recommendations/{target_user_id}/analysis` · `GET /api/roommates/{candidate_id}/profile` · `GET /api/users/{user_id}/lifestyle-summary` |
+| 대화·매칭 | `POST /api/matchings` 대화 신청 · `GET /api/matchings/me` · `GET`·`POST /api/matchings/{matching_id}/messages` · `PATCH /api/matchings/{matching_id}/agendas/{agenda_id}/decide` · `PATCH /api/matchings/{matching_id}/confirm` · `PATCH /api/matchings/{matching_id}/end` |
+| 알림 | `GET /api/notifications` · `PATCH /api/notifications/{notification_id}/read` · `GET /api/notifications/unread-count` |
+| 공유 | `GET /api/share/{user_id}/match-score` |
+
+## 패키지 구조
+
+```
+kr.bokjakbokjak
+├── auth            구글·체험·테스트 로그인, JWT 발급과 재발급
+├── user            회원, 온보딩, 프로필, 내 상태
+├── university      학교와 학교 이메일 도메인
+├── dormitory       기숙사·방 타입 검색과 등록
+├── survey          설문 문항, 설문 제출, 설문 프로필
+├── matching        모듈 간 인터페이스와 매칭 엔진(engine)
+├── recommendation  추천 리스트, AI 매칭 분석, 생활습관 요약
+├── room            대화 신청, 채팅, 안건 조율, 최종 매칭
+├── notification    알림
+├── share           공유 링크 매칭률
+├── ai              Azure OpenAI 연동
+└── common          보안 설정, 공통 응답·예외
+```
+
+## 개발 방식
+
+- 이슈 → 브랜치(`feat/{이슈번호}-설명`) → PR → `dev` 머지 → `main` 머지 시 자동 배포
+- `dev`·`main`으로 올라온 PR마다 GitHub Actions에서 테스트를 실행합니다.
+- DB 스키마는 Flyway 마이그레이션으로만 바꾸고, 적용된 파일은 수정하지 않습니다.
+
+---
+
+# 개발 문서
 
 ## 로컬 실행
 
@@ -27,7 +144,8 @@ export JWT_SECRET_BASE64="$(openssl rand -base64 32)"
 - `JWT_ISSUER`와 `JWT_AUDIENCE`의 기본값은 각각 `bokjakbokjak`, `bokjakbokjak-api`입니다.
 - `GOOGLE_CLIENT_ID`는 Google 로그인에 쓰는 OAuth 웹 클라이언트 ID입니다. ID 토큰의 대상(`aud`)이 이 값과 같아야 로그인됩니다. 비어 있으면 Google 로그인은 모두 실패합니다.
 - `JWT_REFRESH_TTL`은 리프레시 토큰 유효 기간이며 기본값은 `14d`입니다. 리프레시 토큰은 Redis에 저장합니다.
-- `DEV_LOGIN_KEY`는 테스트 로그인 키입니다. 비어 있으면 테스트 로그인 API가 꺼집니다(404).
+- `DEV_LOGIN_KEY`는 테스트 로그인·초기화 키입니다. 비어 있으면 두 API가 꺼집니다(404).
+- `GUEST_LOGIN_ENABLED`는 체험 로그인을 켤지 정합니다. 기본값은 `true`입니다.
 - `MATCHING_CANDIDATE_SCOPE`는 추천 후보 범위입니다. 기본값 `ROOM_TYPE`은 같은 기숙사·같은 방 타입만, `DORMITORY`는 같은 기숙사면 방 타입이 달라도 후보로 봅니다.
 - `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_API_VERSION`은 AI 요약·분석·안건 생성에 쓰는 Azure OpenAI 설정입니다. 하나라도 비어 있으면 AI를 호출하지 않고 설문 답변 기반의 기본 문구로 동작하므로, 로컬 실행과 테스트에는 없어도 됩니다.
 - `.env.example`은 변수 이름과 예시값만 담습니다. 실제 비밀번호와 JWT 키가 들어간 `.env`는 Git에서 제외됩니다.
@@ -42,7 +160,7 @@ export JWT_SECRET_BASE64="$(openssl rand -base64 32)"
 
 JPA 엔티티가 생성·수정 시각이 필요하면 `BaseEntity`를 상속합니다. `created_at`과 `updated_at`은 JPA Auditing으로 기록됩니다.
 
-`GET /api/health`를 실행할 수 있습니다. 설문 문항은 `GET /api/surveys/current`, 내 설문 응답은 `GET`·`PUT /api/me/survey`로 조회·저장합니다(로그인 필요). 우선순위는 온보딩 때 저장되므로 설문 전에도 `GET /api/me/survey`의 `priorities`에 들어 있습니다. 설문 차수가 올라가면 `SurveyRevisionChangedEvent(userId, revision)`를 발행합니다. `POST /api/auth/login`은 Google 로그인 구현을 연결할 공개 경로로 설정했습니다. Google ID 토큰 검증, PostgreSQL 저장 및 실제 매칭 점수 계산은 후속 기능에서 구현합니다.
+`GET /api/health`를 실행할 수 있습니다. 설문 문항은 `GET /api/surveys/current`, 내 설문 응답은 `GET`·`PUT /api/me/survey`로 조회·저장합니다(로그인 필요). 우선순위는 온보딩 때 저장되므로 설문 전에도 `GET /api/me/survey`의 `priorities`에 들어 있습니다. 설문 차수가 올라가면 `SurveyRevisionChangedEvent(userId, revision)`를 발행합니다.
 
 ## 로그인과 토큰
 
@@ -55,9 +173,12 @@ JPA 엔티티가 생성·수정 시각이 필요하면 `BaseEntity`를 상속합
 - 액세스 토큰은 30분, 리프레시 토큰은 14일입니다. `POST /api/auth/refresh`로 두 토큰을 모두 새로 받고, 쓴 리프레시 토큰은 바로 폐기됩니다.
 - `POST /api/auth/logout`은 현재 액세스 토큰을 남은 시간 동안 차단하고 리프레시 토큰을 지웁니다.
 - `POST /api/auth/dev-login`은 개발·시연용입니다. `X-Dev-Login-Key` 헤더가 `DEV_LOGIN_KEY`와 같고 대상이 테스트 유저일 때만 토큰을 줍니다.
-  - 본문에 `user_id`나 `nickname` 중 하나만 보냅니다. 환경마다 회원 ID가 다를 수 있어서 `{"nickname": "책갈피"}`처럼 닉네임으로 로그인하는 것을 권장합니다.
-  - 같은 닉네임의 테스트 유저가 여러 명이면 400이므로 `user_id`로 로그인합니다.
+  - 본문은 `{"user_id": 1002}`처럼 회원 ID로 보냅니다. `nickname`으로도 찾을 수 있지만 닉네임은 중복을 허용하므로 같은 이름의 테스트 계정이 여러 명이면 400입니다.
   - CORS에서 `X-Dev-Login-Key` 헤더를 허용하므로 브라우저에서도 호출할 수 있습니다.
+- `POST /api/auth/guest-login`은 심사·데모용 체험 로그인입니다. 구글 계정 없이 `{"nickname": "홍길동"}`만 보내면 매번 새 체험 계정을 만들고 토큰을 줍니다.
+  - 체험 계정은 동국대 남산학사 2인실·여성·온보딩 완료 상태의 테스트 계정입니다. 테스트 페르소나와 같은 후보군이라 설문을 마치면 페르소나와 다른 체험자를 추천받습니다.
+  - 닉네임은 일반 회원과 같은 규칙이고 중복을 허용합니다. 응답의 `next_step`은 `SURVEY`이고, 우선순위는 설문 제출 때 함께 보냅니다.
+  - `GUEST_LOGIN_ENABLED=false`로 끌 수 있습니다(기본 켜짐). 꺼져 있으면 404입니다.
 - `POST /api/auth/dev-reset`은 시연 리허설용 초기화입니다. 같은 키로 보호되며, 두 사람 모두 테스트 유저인 매칭과 그 매칭의 메시지·안건·알림을 지웁니다. 실제 회원이 포함된 매칭은 남깁니다.
 - 테스트에서는 Redis 대신 메모리 저장소(`InMemoryAuthTokenStore`)를 씁니다.
 
@@ -86,9 +207,15 @@ JPA 엔티티가 생성·수정 시각이 필요하면 `BaseEntity`를 상속합
 - `GET /api/roommates/{candidate_id}/profile`은 같은 구조로 후보 본인의 답변만 줍니다. 같은 학교이고 설문을 마친 활성 회원만 볼 수 있고, 본인 ID는 400, 그 외는 404입니다. 매칭율은 추천 리스트 값을 그대로 씁니다.
 - `PATCH /api/me/profile`은 닉네임만 바꿉니다(앞뒤 공백 제거 후 1~20자, 줄바꿈·제어문자·보이지 않는 문자 불가, 온보딩과 같은 규칙). 설문 차수와 매칭 점수는 그대로입니다.
 
-## 채희님 연동용 내부 메서드
+## 공유 링크 매칭률
 
-B 모듈은 `kr.bokjakbokjak.matching`의 인터페이스를 생성자로 주입받습니다.
+- `GET /api/share/{user_id}/match-score`는 공유 링크를 연 사용자와 공유한 사용자의 매칭률(0~100)을 돌려줍니다. 친구끼리 재미로 보는 기능이라 추천과 달리 학교·기숙사·성별·최종 매칭 여부를 보지 않습니다.
+- 계산은 추천과 같은 `MatchingEngine`을 씁니다. 상대가 재설문 전이면 예전 답으로 계산합니다.
+- 내가 설문 전이면 409 `SURVEY_REQUIRED`, 상대가 없거나 탈퇴했거나 설문을 낸 적 없으면 404 `TARGET_WITHDRAWN`, 본인이면 400입니다.
+
+## 모듈 간 내부 인터페이스
+
+추천·채팅 모듈은 `kr.bokjakbokjak.matching`의 인터페이스를 생성자로 주입받아 회원·설문 모듈과 연결됩니다.
 
 | 인터페이스 | 메서드 | 반환 |
 | --- | --- | --- |
@@ -101,7 +228,7 @@ B 모듈은 `kr.bokjakbokjak.matching`의 인터페이스를 생성자로 주입
 
 ### 추천 후보와 사용자 요약
 
-- `findCandidates`는 조회한 사람과 같은 학교·같은 성별·같은 기숙사 방 타입이고, 온보딩과 설문을 마친 활성 회원을 돌려줍니다. 본인은 빠집니다. 최종 매칭 완료자 제외와 정렬은 B에서 처리합니다.
+- `findCandidates`는 조회한 사람과 같은 학교·같은 성별·같은 기숙사 방 타입이고, 온보딩과 설문을 마친 활성 회원을 돌려줍니다. 본인은 빠집니다. 최종 매칭 완료자 제외와 정렬은 추천 모듈에서 처리합니다.
 - 조회한 사람이 비활성이거나 기숙사 정보·설문이 비어 있으면 빈 목록입니다. 없는 사용자는 `IllegalArgumentException`을 던집니다.
 - `getUserSummaries`는 요청한 순서대로 중복 없이 돌려줍니다. 탈퇴 회원도 `WITHDRAWN` 상태로 포함하고, 없는 ID는 생략합니다.
 - 설문을 마쳤는지는 `surveyCompleted`로 확인합니다. `surveyRevision`은 캐시가 최신인지 비교할 때만 씁니다.
@@ -156,8 +283,10 @@ Flyway(`V6__insert_test_personas.sql`)로 시연·연동용 페르소나 13명�
 - `viewerToTarget` = Σ(viewer 주제 가중치 × target 습관 점수) ÷ Σ(viewer 주제 가중치). 반대 방향도 같은 방식입니다.
 - `mutualScore`는 두 방향의 조화평균입니다. 둘 다 0이면 0입니다.
 - 주제 라벨은 한쪽이라도 허용범위를 벗어나면 `NEED_ADJUST`, 조건부·모름이 섞이면 `NEED_CHECK`, 나머지는 `GOOD`입니다.
+- `viewerToTarget`는 **viewer의 허용 기준과 가중치**로 본 상대 점수입니다. 점수는 0~1이고, 화면 퍼센트가 필요하면 100을 곱합니다.
 
-- 활성 사용자 `7`과 `12`는 서로 후보로 조회됩니다. 최종 매칭 완료 여부에 따른 추천 제외는 B에서 처리합니다.
+### 샘플 프로필 (`matching-fixture`)
+
+- 활성 사용자 `7`과 `12`는 서로 후보로 조회됩니다.
 - `getUserSummaries`는 탈퇴 샘플 `99`도 `WITHDRAWN` 상태와 함께 반환합니다. 존재하지 않는 ID는 생략합니다.
 - `calculate`는 샘플 쌍 `7 ↔ 12`를 지원합니다. `calculate(7L, 12L)`는 두 방향 `0.85 / 0.79`와 상호 점수 `0.82`를 반환합니다. 이 값은 연동용 고정 예시이며 실제 매칭 산식의 결과가 아닙니다.
-- `viewerToTarget`는 **viewer의 허용 기준과 가중치**로 본 상대 점수입니다. 점수는 0~1이고, 화면 퍼센트가 필요하면 100을 곱합니다.

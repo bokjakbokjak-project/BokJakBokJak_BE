@@ -34,6 +34,8 @@ app:
     refresh-ttl: ${JWT_REFRESH_TTL:14d}
     # 비어 있으면 테스트 로그인 API(/api/auth/dev-login)가 꺼진다
     dev-login-key: ${DEV_LOGIN_KEY:}
+    # 이름만으로 체험 계정을 만드는 체험 로그인(/api/auth/guest-login). 대회가 끝나면 false로 끈다
+    guest-login-enabled: ${GUEST_LOGIN_ENABLED:true}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
   matching:

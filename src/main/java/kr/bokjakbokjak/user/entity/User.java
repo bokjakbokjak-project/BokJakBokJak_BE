@@ -75,6 +75,20 @@ public class User extends BaseEntity {
         return user;
     }
 
+    /**
+     * 심사·데모용 체험 계정. 구글 계정 없이 만들고 온보딩을 마친 테스트 계정으로 둔다.
+     * 학교·성별·방 타입은 테스트 페르소나와 같게 받아 같은 후보군에 들어간다
+     */
+    public static User guest(
+            Long universityId, String nickname, Gender gender, String department, int birthYear,
+            Long roomTypeId, Instant createdAt) {
+        User user = new User();
+        user.universityId = universityId;
+        user.testUser = true;
+        user.completeOnboarding(department, null, nickname, gender, birthYear, roomTypeId, createdAt);
+        return user;
+    }
+
     /** 온보딩 4단계 정보를 저장한다. 첫 설문 제출 전까지는 다시 저장할 수 있다 */
     public void completeOnboarding(
             String department,

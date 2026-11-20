@@ -31,7 +31,7 @@ class ChatRequestValidator {
                 .stream()
                 .collect(Collectors.toMap(UserSummaryDto::userId, Function.identity()));
         UserSummaryDto requester = users.get(requesterId);
-        if (requester == null || requester.surveyRevision() <= 0) {
+        if (requester == null || !requester.surveyCompleted()) {
             throw new ApiException(ErrorCode.SURVEY_REQUIRED);
         }
         if (requesterId.equals(receiverId)) {

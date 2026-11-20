@@ -21,7 +21,7 @@ final class LifestyleSummaryPrompt {
             {"summary":"...","keywords":["..."]}
 
             좋은 예
-            {"summary":"밤 11시에서 12시 사이에 잠들고 알람은 한두 번이면 일어나는 편이에요. 사용한 식기와 음식물은 그날 안에 정리해요.","keywords":["12시 전 취침","알람 1~2번","그날 정리","비흡연"]}
+            {"summary":"밤 11시에서 12시 사이에 잠들고 알람은 한두 번이면 일어나는 편이에요. 음식물은 그날 안에 치우고 냉난방은 잠깐 켰다가 꺼요.","keywords":["12시 전 취침","알람 1~2번","그날 정리","비흡연"]}
             """;
 
     private LifestyleSummaryPrompt() {

@@ -104,7 +104,7 @@ class MatchAnalysisServiceTest {
 
         MatchAnalysisResponse response = matchAnalysisService.getAnalysis(VIEWER, MINT);
 
-        assertThat(response.adjustPoints()).containsExactly("식기 정리 기준이 서로 달라요. 대화에서 미리 정해 두면 좋아요.");
+        assertThat(response.adjustPoints()).containsExactly("냉난방 사용 기준이 서로 달라요. 대화에서 미리 정해 두면 좋아요.");
         assertThat(aiAnalysisRepository.count()).isZero();
     }
 
@@ -113,6 +113,20 @@ class MatchAnalysisServiceTest {
         users.addUser(VIEWER, "책갈피", 0);
 
         assertRejected(MINT, "SURVEY_REQUIRED", HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void viewerWaitingForResurveyMustTakeSurvey() {
+        users.requireResurvey(VIEWER);
+
+        assertRejected(MINT, "SURVEY_REQUIRED", HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void targetWaitingForResurveyCanStillBeAnalyzed() {
+        users.requireResurvey(MINT);
+
+        assertThat(matchAnalysisService.getAnalysis(VIEWER, MINT).target().userId()).isEqualTo(MINT);
     }
 
     @Test

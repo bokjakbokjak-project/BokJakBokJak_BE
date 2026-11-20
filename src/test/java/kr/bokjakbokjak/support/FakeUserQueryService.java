@@ -28,6 +28,12 @@ public class FakeUserQueryService implements UserQueryService {
                 List.of("CLEANING", "SLEEP_SCHEDULE", "SMOKING")));
     }
 
+    public void requireResurvey(long userId) {
+        UserSummaryDto user = users.get(userId);
+        users.put(userId, new UserSummaryDto(userId, user.nickname(), user.department(), user.birthYear(),
+                user.status(), user.surveyRevision(), false, user.topCategories()));
+    }
+
     public void withdraw(long userId) {
         UserSummaryDto user = users.get(userId);
         users.put(userId, new UserSummaryDto(userId, user.nickname(), user.department(), user.birthYear(), WITHDRAWN,
@@ -50,7 +56,7 @@ public class FakeUserQueryService implements UserQueryService {
                 .sorted()
                 .map(users::get)
                 .filter(Objects::nonNull)
-                .filter(user -> ACTIVE.equals(user.status()) && user.surveyRevision() > 0)
+                .filter(user -> ACTIVE.equals(user.status()) && user.surveyCompleted())
                 .map(user -> new CandidateDto(user.userId(), user.nickname(), user.department(), 2024,
                         user.birthYear(), user.topCategories()))
                 .toList();

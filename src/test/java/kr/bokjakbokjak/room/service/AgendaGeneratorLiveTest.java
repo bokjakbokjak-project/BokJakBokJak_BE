@@ -49,8 +49,8 @@ class AgendaGeneratorLiveTest {
                         "새벽 1시 이후에 잔다", "12시 전에는 불을 꺼 주면 좋겠다", "11시 전에 잔다", "12시까지는 괜찮다"),
                 item("SMOKING", "SMOKING", "룸메이트가 흡연을 해요.", MatchLabel.NEED_ADJUST, "0.2",
                         "밖에서 피운다", "상관없다", "비흡연자다", "냄새가 안 나면 괜찮다"),
-                item("DISHES", "PERSONAL_HYGIENE", "방 안에 사용한 컵이 놓여 있어요.", MatchLabel.GOOD, "0.4",
-                        "그날 안에 정리한다", "다음 날까지는 괜찮다", "바로 정리한다", "그날 안에만 정리하면 괜찮다"));
+                item("TEMPERATURE", "TEMPERATURE", "초여름이나 초겨울, 냉난방을 사용해요.", MatchLabel.GOOD, "0.4",
+                        "덥거나 추울 때 잠깐 켰다가 끈다", "일정시간 이상 켜두어도 괜찮다", "잠깐 켰다가 끈다", "일정시간 이상 켜두어도 괜찮다"));
     }
 
     private static MatchItemDto item(String topicCode, String categoryCode, String scenario, MatchLabel label,

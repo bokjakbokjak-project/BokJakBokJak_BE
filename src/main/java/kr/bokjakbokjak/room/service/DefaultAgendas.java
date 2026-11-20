@@ -19,10 +19,10 @@ final class DefaultAgendas {
                     "음식물 쓰레기는 언제까지 버릴까요?"),
             "BELONGINGS", new GeneratedAgenda("BELONGINGS", "개인 물건 정리",
                     "꺼내 둔 개인 물건은 언제까지 정리할까요?"),
-            "DISHES", new GeneratedAgenda("DISHES", "식기 정리",
-                    "사용한 컵이나 그릇은 언제까지 정리할까요?"),
             "SMOKING", new GeneratedAgenda("SMOKING", "흡연 후 배려",
-                    "흡연 후 방에 들어올 때 어떤 점을 지킬까요?"));
+                    "흡연 후 방에 들어올 때 어떤 점을 지킬까요?"),
+            "TEMPERATURE", new GeneratedAgenda("TEMPERATURE", "냉난방 사용",
+                    "냉난방은 언제, 얼마나 켜 둘까요?"));
 
     private DefaultAgendas() {
     }

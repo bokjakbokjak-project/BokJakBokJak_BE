@@ -110,6 +110,13 @@ class ChatRequestServiceTest {
     }
 
     @Test
+    void requesterWaitingForResurveyMustTakeSurvey() {
+        users.requireResurvey(BOOKMARK);
+
+        assertRejected(() -> chatRequestService.request(BOOKMARK, MINT), "SURVEY_REQUIRED", HttpStatus.CONFLICT);
+    }
+
+    @Test
     void cannotRequestSelf() {
         assertRejected(() -> chatRequestService.request(BOOKMARK, BOOKMARK), "CANNOT_REQUEST_SELF",
                 HttpStatus.BAD_REQUEST);

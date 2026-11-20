@@ -37,7 +37,7 @@ public class MatchAnalysisService {
         Map<Long, UserSummaryDto> users = userQueryService.getUserSummaries(List.of(viewerId, targetId)).stream()
                 .collect(Collectors.toMap(UserSummaryDto::userId, Function.identity(), (first, second) -> first));
         UserSummaryDto viewer = users.get(viewerId);
-        if (viewer == null || viewer.surveyRevision() <= 0) {
+        if (viewer == null || !viewer.surveyCompleted()) {
             throw new ApiException(ErrorCode.SURVEY_REQUIRED);
         }
         UserSummaryDto target = users.get(targetId);

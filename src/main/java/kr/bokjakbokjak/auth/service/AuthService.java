@@ -20,6 +20,7 @@ import kr.bokjakbokjak.common.JwtService;
 import kr.bokjakbokjak.university.repository.UniversityDomainRepository;
 import kr.bokjakbokjak.user.entity.User;
 import kr.bokjakbokjak.user.repository.UserRepository;
+import kr.bokjakbokjak.user.service.GuestAccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -38,6 +39,7 @@ public class AuthService {
     private final AuthTokenStore tokenStore;
     private final AuthProperties properties;
     private final DevAccessGuard devAccessGuard;
+    private final GuestAccountService guestAccountService;
 
     public AuthService(
             GoogleIdTokenVerifier googleVerifier,
@@ -47,7 +49,8 @@ public class AuthService {
             JwtService jwtService,
             AuthTokenStore tokenStore,
             AuthProperties properties,
-            DevAccessGuard devAccessGuard) {
+            DevAccessGuard devAccessGuard,
+            GuestAccountService guestAccountService) {
         this.googleVerifier = googleVerifier;
         this.domainRepository = domainRepository;
         this.userRepository = userRepository;
@@ -56,6 +59,7 @@ public class AuthService {
         this.tokenStore = tokenStore;
         this.properties = properties;
         this.devAccessGuard = devAccessGuard;
+        this.guestAccountService = guestAccountService;
     }
 
     /** Google 학교 계정으로 로그인한다. 처음이면 회원을 만든다. */
@@ -86,6 +90,14 @@ public class AuthService {
     public LoginResponse devLogin(String key, DevLoginRequest request) {
         devAccessGuard.check(key);
         return issue(requireActive(findTestUser(request)));
+    }
+
+    /** 심사·데모용. 이름만으로 매번 새 체험 계정을 만들고 토큰을 준다. 설정으로 끄면 없는 API처럼 404 */
+    public LoginResponse guestLogin(String nickname) {
+        if (!properties.guestLoginEnabled()) {
+            throw new ApiException(ErrorCode.RESOURCE_NOT_FOUND);
+        }
+        return issue(guestAccountService.create(nickname));
     }
 
     /** hd가 있어야 학교·회사 Google Workspace 계정이다. hd나 이메일 도메인 중 하나가 등록된 학교면 통과 */

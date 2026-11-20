@@ -1,6 +1,6 @@
 # 🏠 복작복작 BE
 
-> 생활습관의 언어를 통일하고, 서로의 조율 가능성으로 매칭해 입주 전 오해와 갈등을 줄이는 룸메이트 매칭 서비스의 백엔드입니다.
+> 생활습관의 언어를 통일하고, 서로의 조율 가능성으로 매칭해 입주 전 오해와 갈등을 줄이는 대학생 룸메이트 매칭 서비스의 백엔드입니다.
 
 ![Java](https://img.shields.io/badge/Java_21-007396?style=flat-square&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot_4.1-6DB33F?style=flat-square&logo=springboot&logoColor=white)

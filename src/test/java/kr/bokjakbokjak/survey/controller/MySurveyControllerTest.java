@@ -106,10 +106,41 @@ class MySurveyControllerTest {
                         .value(contains("CLEANING", "SLEEP_SCHEDULE", "PERSONAL_HYGIENE")))
                 .andExpect(jsonPath("$.data.answers", hasSize(16)))
                 .andExpect(jsonPath("$.data.answers[0].question_code").value("SLEEP_HABITS_H"))
-                .andExpect(jsonPath("$.data.answers[15].question_code").value("SMOKING_T"))
-                .andExpect(jsonPath("$.data.answers[15].option_code").value("OUTSIDE_LOW_ODOR"));
+                .andExpect(jsonPath("$.data.answers[13].question_code").value("SMOKING_T"))
+                .andExpect(jsonPath("$.data.answers[13].option_code").value("OUTSIDE_LOW_ODOR"))
+                .andExpect(jsonPath("$.data.answers[15].question_code").value("TEMPERATURE_T"))
+                .andExpect(jsonPath("$.data.answers[15].option_code").value("LONG_OK"));
 
         assertThat(revisionEvents(userId)).containsExactly(1);
+    }
+
+    @Test
+    void userWaitingForResurveyGetsOldAnswersAndSubmitsWithCurrentRevision() throws Exception {
+        long userId = createUser(true);
+        submit(userId, 0, CLEANING_FIRST, answers()).andExpect(status().isOk());
+        // 설문 개편 마이그레이션 직후 상태: 새 문항 답이 없고 설문 완료 시각이 비어 있다
+        jdbc.sql("delete from survey_answer where user_id = ? and question_code like 'TEMPERATURE%'")
+                .param(userId).update();
+        jdbc.sql("update app_user set survey_completed_at = null where id = ?").param(userId).update();
+
+        mvc.perform(get("/api/me/survey").header("Authorization", bearer(userId)))
+                .andExpect(jsonPath("$.data.revision").value(1))
+                .andExpect(jsonPath("$.data.survey_completed").value(false))
+                .andExpect(jsonPath("$.data.priorities", hasSize(3)))
+                .andExpect(jsonPath("$.data.answers", hasSize(14)));
+        mvc.perform(get("/api/me/status").header("Authorization", bearer(userId)))
+                .andExpect(jsonPath("$.data.survey_completed").value(false))
+                .andExpect(jsonPath("$.data.survey_update_required").value(true))
+                .andExpect(jsonPath("$.data.next_step").value("SURVEY"));
+
+        submit(userId, 1, CLEANING_FIRST, answers())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.revision").value(2))
+                .andExpect(jsonPath("$.data.survey_completed").value(true));
+        mvc.perform(get("/api/me/status").header("Authorization", bearer(userId)))
+                .andExpect(jsonPath("$.data.survey_update_required").value(false))
+                .andExpect(jsonPath("$.data.next_step").value("HOME"));
+        assertThat(revisionEvents(userId)).containsExactly(1, 2);
     }
 
     @Test
@@ -244,10 +275,10 @@ class MySurveyControllerTest {
         answers.put("FOOD_WASTE_T", "SAME_DAY_OK");
         answers.put("BELONGINGS_H", "SAME_DAY");
         answers.put("BELONGINGS_T", "NO_SPACE_INVASION");
-        answers.put("DISHES_H", "NEXT_DAY");
-        answers.put("DISHES_T", "NEXT_DAY_OK");
         answers.put("SMOKING_H", "NON_SMOKER");
         answers.put("SMOKING_T", "OUTSIDE_LOW_ODOR");
+        answers.put("TEMPERATURE_H", "SHORT");
+        answers.put("TEMPERATURE_T", "LONG_OK");
         return answers;
     }
 

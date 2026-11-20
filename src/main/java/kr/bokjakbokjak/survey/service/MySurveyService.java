@@ -65,7 +65,7 @@ public class MySurveyService {
                 .stream()
                 .map(weight -> new SurveySubmitRequest.Priority(weight.getCategoryCode(), weight.getRank()))
                 .toList();
-        if (!user.isSurveyCompleted()) {
+        if (!user.hasSubmittedSurvey()) {
             return new MySurveyResponse(0, false, null, priorities, List.of());
         }
 
@@ -77,8 +77,9 @@ public class MySurveyService {
                         question.getCode(), optionByQuestion.get(question.getCode())))
                 .toList();
 
+        // 다시 설문해야 하는 사용자는 남아 있는 예전 답을 돌려준다. FE는 미리 채워두고 새 문항만 받으면 된다
         return new MySurveyResponse(
-                user.getSurveyRevision(), true, user.getSurveyCompletedAt(), priorities, answers);
+                user.getSurveyRevision(), user.isSurveyCompleted(), user.getSurveyCompletedAt(), priorities, answers);
     }
 
     @Transactional

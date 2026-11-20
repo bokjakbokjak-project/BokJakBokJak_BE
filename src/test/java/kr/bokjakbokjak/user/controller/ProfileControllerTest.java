@@ -51,8 +51,8 @@ class ProfileControllerTest {
                 .andExpect(jsonPath("$.data.department").value("산업공학과"))
                 .andExpect(jsonPath("$.data.top_categories[0]").value("CLEANING"))
                 .andExpect(jsonPath("$.data.top_categories.length()").value(3))
-                .andExpect(jsonPath("$.data.survey_revision").value(1))
-                .andExpect(jsonPath("$.data.categories.length()").value(5))
+                .andExpect(jsonPath("$.data.survey_revision").value(2))
+                .andExpect(jsonPath("$.data.categories.length()").value(6))
                 .andExpect(jsonPath("$.data.categories[0].category_code").value("SLEEP_HABITS"))
                 .andExpect(jsonPath("$.data.categories[0].name").value("잠버릇"))
                 .andExpect(jsonPath("$.data.categories[1].category_code").value("SLEEP_SCHEDULE"))
@@ -63,6 +63,8 @@ class ProfileControllerTest {
                 .andExpect(jsonPath("$.data.categories[1].topics[0].habit_answer").value("밤 10시~12시"))
                 .andExpect(jsonPath("$.data.categories[1].topics[0].tolerance_answer").value("밤 12시까지"))
                 .andExpect(jsonPath("$.data.categories[1].topics[1].topic_code").value("ALARM"))
+                .andExpect(jsonPath("$.data.categories[5].category_code").value("TEMPERATURE"))
+                .andExpect(jsonPath("$.data.categories[5].topics[0].habit_answer").value("덥거나 추울 때 일정시간 이상 켜둔다"))
                 .andExpect(jsonPath("$.data.categories[4].category_code").value("SMOKING"))
                 .andExpect(jsonPath("$.data.categories[4].topics[0].habit_answer").value("비흡연자다"))
                 .andExpect(jsonPath("$.data.categories[4].topics[0].tolerance_answer")
@@ -88,7 +90,7 @@ class ProfileControllerTest {
                 .andExpect(jsonPath("$.data.nickname").value("깔끔이"))
                 .andExpect(jsonPath("$.data.department").value("화학과"))
                 .andExpect(jsonPath("$.data.top_categories[1]").value("PERSONAL_HYGIENE"))
-                .andExpect(jsonPath("$.data.categories.length()").value(5))
+                .andExpect(jsonPath("$.data.categories.length()").value(6))
                 .andExpect(jsonPath("$.data.categories[1].topics[0].habit_answer").value("밤 10시~12시"))
                 .andExpect(jsonPath("$.data.user_id").doesNotExist());
     }

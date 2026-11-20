@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kr.bokjakbokjak.auth.dto.DevLoginRequest;
 import kr.bokjakbokjak.auth.dto.DevResetResponse;
+import kr.bokjakbokjak.auth.dto.GuestLoginRequest;
 import kr.bokjakbokjak.auth.dto.LoginRequest;
 import kr.bokjakbokjak.auth.dto.LoginResponse;
 import kr.bokjakbokjak.auth.dto.RefreshTokenRequest;
@@ -53,6 +54,14 @@ public class AuthController {
             @Valid @RequestBody RefreshTokenRequest request) {
         authService.logout((JwtService.AccessClaims) authentication.getDetails(), request.refreshToken());
         return ApiResponse.success(SuccessCode.LOGOUT_SUCCESS, null);
+    }
+
+    @Operation(summary = "체험 로그인 (심사·데모용)",
+            description = "이름만으로 매번 새 체험 계정을 만들어 토큰을 발급한다. 동국대 남산학사 2인실·여성·온보딩 완료 상태의 "
+                    + "테스트 계정이라 테스트 페르소나와 같은 후보군에 들어간다. next_step은 SURVEY.")
+    @PostMapping("/guest-login")
+    public ApiResponse.Success<LoginResponse> guestLogin(@RequestBody GuestLoginRequest request) {
+        return ApiResponse.success(SuccessCode.LOGIN_SUCCESS, authService.guestLogin(request.nickname()));
     }
 
     @Operation(summary = "테스트 로그인 (개발·시연용)",

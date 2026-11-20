@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import kr.bokjakbokjak.auth.google.GoogleIdTokenVerifier;
+import kr.bokjakbokjak.matching.CandidateDto;
 import kr.bokjakbokjak.notification.entity.Notification;
 import kr.bokjakbokjak.notification.entity.NotificationType;
 import kr.bokjakbokjak.notification.repository.NotificationRepository;
@@ -33,6 +34,7 @@ import kr.bokjakbokjak.room.entity.Matching;
 import kr.bokjakbokjak.room.repository.AgendaRepository;
 import kr.bokjakbokjak.room.repository.ChatMessageRepository;
 import kr.bokjakbokjak.room.repository.MatchingRepository;
+import kr.bokjakbokjak.user.service.UserQueryServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -66,6 +68,7 @@ class AuthControllerTest {
     @Autowired AgendaRepository agendaRepository;
     @Autowired ChatMessageRepository chatMessageRepository;
     @Autowired NotificationRepository notificationRepository;
+    @Autowired UserQueryServiceImpl candidates;
 
     @DynamicPropertySource
     static void config(DynamicPropertyRegistry registry) {
@@ -307,6 +310,76 @@ class AuthControllerTest {
                 jdbc.sql("delete from " + table + " where matching_id = ?").param(withRealUser).update();
             }
         }
+    }
+
+    @Test
+    void guestLoginCreatesOnboardedTestAccountInPersonaPool() throws Exception {
+        long guest = guestLogin(" 체험자 ")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("LOGIN_SUCCESS"))
+                .andExpect(jsonPath("$.data.access_token").exists())
+                .andExpect(jsonPath("$.data.onboarding_completed").value(true))
+                .andExpect(jsonPath("$.data.survey_completed").value(false))
+                .andExpect(jsonPath("$.data.next_step").value("SURVEY"))
+                .andReturn().getResponse().getContentAsString()
+                .transform(body -> ((Number) JsonPath.read(body, "$.data.user_id")).longValue());
+
+        var row = jdbc.sql("""
+                        select u.nickname, u.test_user, u.gender, u.department, r.dormitory_key, r.name, un.code
+                        from app_user u
+                        join dormitory_room_type r on r.id = u.room_type_id
+                        join university un on un.id = u.university_id
+                        where u.id = ?""")
+                .param(guest).query().singleRow();
+        assertThat(row.get("nickname")).isEqualTo("체험자");
+        assertThat(row.get("test_user")).isEqualTo(true);
+        assertThat(row.get("gender")).isEqualTo("FEMALE");
+        assertThat(row.get("department")).isEqualTo("체험 참가자");
+        assertThat(row.get("dormitory_key")).isEqualTo("남산학사");
+        assertThat(row.get("name")).isEqualTo("2인실");
+        assertThat(row.get("code")).isEqualTo("DONGGUK");
+
+        // 설문을 마치면 페르소나와 서로 후보가 된다
+        jdbc.sql("update app_user set survey_revision = 1, survey_completed_at = CURRENT_TIMESTAMP where id = ?")
+                .param(guest).update();
+        long bookmark = personaId("책갈피");
+        assertThat(candidates.findCandidates(guest)).extracting(CandidateDto::userId).contains(bookmark);
+        assertThat(candidates.findCandidates(bookmark)).extracting(CandidateDto::userId).contains(guest);
+    }
+
+    @Test
+    void guestLoginCreatesNewAccountEvenWithSameName() throws Exception {
+        String first = guestLogin("김민수").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String second = guestLogin("김민수").andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+
+        assertThat(((Number) JsonPath.read(first, "$.data.user_id")).longValue())
+                .isNotEqualTo(((Number) JsonPath.read(second, "$.data.user_id")).longValue());
+    }
+
+    @Test
+    void guestLoginValidatesNickname() throws Exception {
+        for (String nickname : new String[] {"   ", "가".repeat(21), "체험\\n자"}) {
+            guestLogin(nickname)
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_NICKNAME"));
+        }
+    }
+
+    @Test
+    void devResetAlsoClearsGuestMatchings() throws Exception {
+        long guest = ((Number) JsonPath.read(guestLogin("초기화체험").andReturn().getResponse().getContentAsString(),
+                "$.data.user_id")).longValue();
+        Long guestAndPersona = seedMatching(guest, personaId("책갈피"));
+
+        devReset(DEV_KEY).andExpect(status().isOk());
+
+        assertThat(matchingRepository.existsById(guestAndPersona)).isFalse();
+    }
+
+    private ResultActions guestLogin(String nickname) throws Exception {
+        return mvc.perform(post("/api/auth/guest-login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nickname\":\"" + nickname + "\"}"));
     }
 
     private Long seedMatching(long requesterId, long receiverId) {

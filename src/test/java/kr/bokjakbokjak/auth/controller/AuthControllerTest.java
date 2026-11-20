@@ -2,7 +2,9 @@ package kr.bokjakbokjak.auth.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -18,8 +20,19 @@ import com.nimbusds.jwt.SignedJWT;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 import kr.bokjakbokjak.auth.google.GoogleIdTokenVerifier;
+import kr.bokjakbokjak.notification.entity.Notification;
+import kr.bokjakbokjak.notification.entity.NotificationType;
+import kr.bokjakbokjak.notification.repository.NotificationRepository;
+import kr.bokjakbokjak.room.entity.Agenda;
+import kr.bokjakbokjak.room.entity.AgendaStatus;
+import kr.bokjakbokjak.room.entity.ChatMessage;
+import kr.bokjakbokjak.room.entity.Matching;
+import kr.bokjakbokjak.room.repository.AgendaRepository;
+import kr.bokjakbokjak.room.repository.ChatMessageRepository;
+import kr.bokjakbokjak.room.repository.MatchingRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +40,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -48,6 +62,10 @@ class AuthControllerTest {
 
     @Autowired MockMvc mvc;
     @Autowired JdbcClient jdbc;
+    @Autowired MatchingRepository matchingRepository;
+    @Autowired AgendaRepository agendaRepository;
+    @Autowired ChatMessageRepository chatMessageRepository;
+    @Autowired NotificationRepository notificationRepository;
 
     @DynamicPropertySource
     static void config(DynamicPropertyRegistry registry) {
@@ -221,6 +239,100 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.code").value("NOT_TEST_USER"));
     }
 
+    @Test
+    void devLoginFindsTestUserByNickname() throws Exception {
+        long bookmark = personaId("책갈피");
+
+        devLogin(DEV_KEY, "{\"nickname\":\" 책갈피 \"}")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.user_id").value((int) bookmark));
+        devLogin(DEV_KEY, "{\"nickname\":\"없는닉네임\"}")
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("NOT_TEST_USER"));
+        devLogin(DEV_KEY, "{\"user_id\":" + bookmark + ",\"nickname\":\"책갈피\"}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+        devLogin(DEV_KEY, "{}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+    }
+
+    @Test
+    void devLoginRejectsDuplicatedTestNickname() throws Exception {
+        long mint = personaId("민트초코");
+        jdbc.sql("update app_user set nickname = ? where id = ?").params("책갈피", mint).update();
+        try {
+            devLogin(DEV_KEY, "{\"nickname\":\"책갈피\"}")
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+        } finally {
+            jdbc.sql("update app_user set nickname = ? where id = ?").params("민트초코", mint).update();
+        }
+    }
+
+    @Test
+    void browserCanSendDevLoginKeyHeader() throws Exception {
+        mvc.perform(options("/api/auth/dev-login")
+                        .header(HttpHeaders.ORIGIN, "http://localhost:5173")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
+                        .header(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "content-type,x-dev-login-key"))
+                .andExpect(status().isOk())
+                .andExpect(header().string(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "http://localhost:5173"));
+    }
+
+    @Test
+    void devResetDeletesOnlyMatchingsBetweenTestUsers() throws Exception {
+        long bookmark = personaId("책갈피");
+        long mint = personaId("민트초코");
+        long realUser = loginUserId(newSub());
+        Long testPair = seedMatching(bookmark, mint);
+        Long withRealUser = seedMatching(realUser, bookmark);
+        try {
+            devReset("wrong-key").andExpect(status().isUnauthorized());
+
+            devReset(DEV_KEY)
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.deleted_matchings").value(1))
+                    .andExpect(jsonPath("$.data.deleted_messages").value(1))
+                    .andExpect(jsonPath("$.data.deleted_agendas").value(1))
+                    .andExpect(jsonPath("$.data.deleted_notifications").value(1));
+
+            assertThat(matchingRepository.existsById(testPair)).isFalse();
+            assertThat(matchingRepository.existsById(withRealUser)).isTrue();
+            assertThat(countByMatching("chat_message", withRealUser)).isEqualTo(1);
+            assertThat(countByMatching("agenda", withRealUser)).isEqualTo(1);
+            assertThat(countByMatching("notification", withRealUser)).isEqualTo(1);
+        } finally {
+            for (String table : List.of("chat_message", "agenda", "notification", "matching")) {
+                jdbc.sql("delete from " + table + " where matching_id = ?").param(withRealUser).update();
+            }
+        }
+    }
+
+    private Long seedMatching(long requesterId, long receiverId) {
+        Long matchingId = matchingRepository.save(Matching.start(requesterId, receiverId, 1, 1)).getId();
+        Long agendaId = agendaRepository.save(
+                Agenda.create(matchingId, 1, "BEDTIME", "취침 시간", "몇 시에 잘까요?", AgendaStatus.DISCUSSING)).getId();
+        chatMessageRepository.save(ChatMessage.system(matchingId, "대화가 시작됐어요.", agendaId));
+        notificationRepository.save(
+                Notification.create(receiverId, matchingId, NotificationType.CHAT_REQUESTED, "대화 신청이 왔어요."));
+        return matchingId;
+    }
+
+    private long countByMatching(String table, Long matchingId) {
+        return jdbc.sql("select count(*) from " + table + " where matching_id = ?")
+                .param(matchingId).query(Long.class).single();
+    }
+
+    private ResultActions devReset(String key) throws Exception {
+        return mvc.perform(post("/api/auth/dev-reset").header("X-Dev-Login-Key", key));
+    }
+
+    private long personaId(String nickname) {
+        return jdbc.sql("select id from app_user where test_user = TRUE and nickname = ?")
+                .param(nickname).query(Long.class).single();
+    }
+
     private long loginUserId(String sub) throws Exception {
         String body = login(idToken(sub, sub + "@dgu.ac.kr", "dgu.ac.kr"))
                 .andExpect(status().isOk())
@@ -241,9 +353,13 @@ class AuthControllerTest {
     }
 
     private ResultActions devLogin(String key, long userId) throws Exception {
+        return devLogin(key, "{\"user_id\":" + userId + "}");
+    }
+
+    private ResultActions devLogin(String key, String body) throws Exception {
         var request = post("/api/auth/dev-login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"user_id\":" + userId + "}");
+                .content(body);
         if (key != null) {
             request.header("X-Dev-Login-Key", key);
         }

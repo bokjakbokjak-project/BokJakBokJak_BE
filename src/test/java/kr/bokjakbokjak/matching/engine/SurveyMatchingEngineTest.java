@@ -58,6 +58,7 @@ class SurveyMatchingEngineTest {
 
         assertThat(result.viewerId()).isEqualTo(a);
         assertThat(result.items()).hasSize(8);
+        assertThat(result.items().get(7).topicCode()).isEqualTo("TEMPERATURE");
         assertThat(result.items().get(1).topicCode()).isEqualTo("BEDTIME");
         assertThat(result.items().get(1).label()).isEqualTo(MatchLabel.NEED_ADJUST);
         assertThat(result.items().get(1).targetHabit()).isEqualTo("새벽 12시~2시");
@@ -75,6 +76,38 @@ class SurveyMatchingEngineTest {
         assertThrows(IllegalArgumentException.class, () -> matchingEngine.calculate(done, done));
         assertThrows(IllegalArgumentException.class, () -> matchingEngine.calculate(done, notYet));
         assertThrows(IllegalArgumentException.class, () -> matchingEngine.calculate(done, -1L));
+    }
+
+    @Test
+    void userWaitingForResurveyIsCalculatedWithOldAnswers() {
+        long done = createUser();
+        long waiting = createUser();
+        submit(done, List.of("CLEANING", "SLEEP_SCHEDULE", "TEMPERATURE"), Map.of());
+        submit(waiting, List.of("CLEANING", "SLEEP_SCHEDULE", "SMOKING"), Map.of());
+        // 설문 개편 직후처럼 새 문항 답이 없고 설문 완료 시각이 비어 있는 상태
+        jdbc.sql("delete from survey_answer where user_id = ? and question_code like 'TEMPERATURE%'")
+                .param(waiting).update();
+        jdbc.sql("update app_user set survey_completed_at = null where id = ?").param(waiting).update();
+
+        MatchResultDto result = matchingEngine.calculate(done, waiting);
+
+        var temperature = result.items().get(result.items().size() - 1);
+        assertThat(temperature.topicCode()).isEqualTo("TEMPERATURE");
+        assertThat(temperature.label()).isEqualTo(MatchLabel.NEED_CHECK);
+        assertThat(temperature.targetHabit()).isEqualTo("아직 답하지 않았어요");
+        assertThat(result.mutualScore()).isLessThan(java.math.BigDecimal.ONE);
+    }
+
+    @Test
+    void seededPersonasCanBeMatched() {
+        List<Long> personas = jdbc.sql("select id from app_user where test_user = TRUE order by id")
+                .query(Long.class).list();
+
+        for (Long persona : personas) {
+            assertThat(jdbc.sql("select count(*) from survey_answer where user_id = ?")
+                    .param(persona).query(Integer.class).single()).isEqualTo(16);
+        }
+        assertThatCode(() -> matchingEngine.calculate(personas.get(0), personas.get(1))).doesNotThrowAnyException();
     }
 
     @Test
@@ -104,8 +137,8 @@ class SurveyMatchingEngineTest {
                 Map.entry("FLOOR_CLEAN_H", "WEEKLY"), Map.entry("FLOOR_CLEAN_T", "WEEKLY_MIN"),
                 Map.entry("FOOD_WASTE_H", "SAME_DAY"), Map.entry("FOOD_WASTE_T", "SAME_DAY_OK"),
                 Map.entry("BELONGINGS_H", "IMMEDIATELY"), Map.entry("BELONGINGS_T", "SAME_DAY_OK"),
-                Map.entry("DISHES_H", "SAME_DAY"), Map.entry("DISHES_T", "SAME_DAY_OK"),
-                Map.entry("SMOKING_H", "NON_SMOKER"), Map.entry("SMOKING_T", "ANY_OK")));
+                Map.entry("SMOKING_H", "NON_SMOKER"), Map.entry("SMOKING_T", "ANY_OK"),
+                Map.entry("TEMPERATURE_H", "LONG"), Map.entry("TEMPERATURE_T", "LONG_OK")));
         answers.putAll(overrides);
 
         List<SurveySubmitRequest.Priority> priorities = new java.util.ArrayList<>();

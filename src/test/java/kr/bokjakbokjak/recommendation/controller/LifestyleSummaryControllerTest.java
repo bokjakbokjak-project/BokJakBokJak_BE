@@ -43,7 +43,7 @@ class LifestyleSummaryControllerTest {
 
     @Test
     void returnsSummaryInSnakeCase() throws Exception {
-        when(lifestyleSummaryService.getSummary(12L)).thenReturn(new LifestyleSummaryResponse(
+        when(lifestyleSummaryService.getSummary(7L, 12L)).thenReturn(new LifestyleSummaryResponse(
                 12L, "거의 매일 바닥을 청소해요.", List.of("매일 청소", "비흡연"), Instant.parse("2026-11-12T03:00:00Z")));
 
         mvc.perform(get("/api/users/12/lifestyle-summary").header("Authorization", bearer(7L)))
@@ -57,7 +57,7 @@ class LifestyleSummaryControllerTest {
 
     @Test
     void withdrawnUserIsNotFound() throws Exception {
-        when(lifestyleSummaryService.getSummary(99L)).thenThrow(new ApiException(ErrorCode.TARGET_WITHDRAWN));
+        when(lifestyleSummaryService.getSummary(7L, 99L)).thenThrow(new ApiException(ErrorCode.TARGET_WITHDRAWN));
 
         mvc.perform(get("/api/users/99/lifestyle-summary").header("Authorization", bearer(7L)))
                 .andExpect(status().isNotFound())

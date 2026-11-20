@@ -24,8 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class ProfileService {
-    private static final int MAX_NICKNAME_LENGTH = 20;
-
     private final UserRepository userRepository;
     private final SurveyProfileQueryService surveyProfileQueryService;
     private final SurveyCategoryRepository categoryRepository;
@@ -81,10 +79,8 @@ public class ProfileService {
 
     @Transactional
     public NicknameResponse changeNickname(Long userId, NicknameRequest request) {
-        String nickname = request.nickname() == null ? "" : request.nickname().strip();
-        if (nickname.isEmpty() || nickname.length() > MAX_NICKNAME_LENGTH) {
-            throw new ApiException(ErrorCode.INVALID_NICKNAME, Map.of("nickname", "INVALID_FORMAT"));
-        }
+        String nickname = NicknamePolicy.normalize(request.nickname())
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_NICKNAME, Map.of("nickname", "INVALID_FORMAT")));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
         user.changeNickname(nickname);
@@ -95,7 +91,7 @@ public class ProfileService {
         return survey.topCategories().stream().map(SurveyProfileDto.CategoryRank::code).toList();
     }
 
-    /** 카테고리 5개를 표시 순서대로, 그 안의 주제도 표시 순서대로 묶는다. 순위 선택과 무관하게 전부 담는다 */
+    /** 카테고리 6개를 표시 순서대로, 그 안의 주제도 표시 순서대로 묶는다. 순위 선택과 무관하게 전부 담는다 */
     private List<ProfileCategory> categories(SurveyProfileDto survey) {
         Map<String, List<ProfileCategory.Topic>> topicsByCategory = survey.topics().stream()
                 .collect(Collectors.groupingBy(

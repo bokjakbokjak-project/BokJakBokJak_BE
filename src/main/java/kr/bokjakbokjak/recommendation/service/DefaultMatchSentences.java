@@ -11,8 +11,8 @@ final class DefaultMatchSentences {
             "FLOOR_CLEAN", "바닥 청소",
             "FOOD_WASTE", "음식물 쓰레기 처리",
             "BELONGINGS", "개인 물건 정리",
-            "DISHES", "식기 정리",
-            "SMOKING", "흡연");
+            "SMOKING", "흡연",
+            "TEMPERATURE", "냉난방 사용");
 
     private DefaultMatchSentences() {
     }

@@ -1,6 +1,7 @@
 package kr.bokjakbokjak.room.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.ArrayList;
@@ -122,7 +123,39 @@ class MatchingConfirmServiceTest {
                 })
                 .extracting(message -> message.getMatchingId())
                 .containsExactlyInAnyOrder(bookmarkOther, mintOther);
-        assertThat(notificationRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    void finalConfirmNotifiesFirstConfirmer() {
+        matchingConfirmService.confirm(BOOKMARK, matchingId);
+
+        matchingConfirmService.confirm(MINT, matchingId);
+
+        assertThat(notificationRepository.findAll())
+                .filteredOn(notification -> notification.getType() == NotificationType.MATCHING_CONFIRMED)
+                .singleElement().satisfies(notification -> {
+                    assertThat(notification.getReceiverId()).isEqualTo(BOOKMARK);
+                    assertThat(notification.getMatchingId()).isEqualTo(matchingId);
+                    assertThat(notification.getContent()).isEqualTo("민트초코님과 룸메이트 매칭이 완료됐어요.");
+                });
+        assertThat(notificationRepository.count()).isEqualTo(2);
+    }
+
+    @Test
+    void peopleLeftBehindAreNotified() {
+        Long bookmarkOther = start(DAWN, BOOKMARK);
+        Long mintOther = start(MINT, CLOVER);
+        matchingConfirmService.confirm(BOOKMARK, matchingId);
+
+        matchingConfirmService.confirm(MINT, matchingId);
+
+        assertThat(notificationRepository.findAll())
+                .filteredOn(notification -> notification.getType() == NotificationType.PARTNER_MATCHED_ELSEWHERE)
+                .extracting(notification -> notification.getReceiverId(), notification -> notification.getMatchingId(),
+                        notification -> notification.getContent())
+                .containsExactlyInAnyOrder(
+                        tuple(DAWN, bookmarkOther, "책갈피님이 다른 분과 매칭되어 대화가 종료됐어요."),
+                        tuple(CLOVER, mintOther, "민트초코님이 다른 분과 매칭되어 대화가 종료됐어요."));
     }
 
     @Test

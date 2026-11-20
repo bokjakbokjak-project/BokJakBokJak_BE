@@ -114,6 +114,12 @@ class OnboardingControllerTest {
         save(userId, body("가".repeat(21), "2005", roomTypeId, THREE_PRIORITIES))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.nickname").exists());
+        save(userId, body("새\\n내기", "2005", roomTypeId, THREE_PRIORITIES))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.nickname").exists());
+        save(userId, body("새내기\u200B", "2005", roomTypeId, THREE_PRIORITIES))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.nickname").exists());
         save(userId, body("출생", "1800", roomTypeId, THREE_PRIORITIES))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.birth_year").exists());

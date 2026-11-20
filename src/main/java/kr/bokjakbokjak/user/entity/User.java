@@ -102,8 +102,19 @@ public class User extends BaseEntity {
         return onboardingCompletedAt != null;
     }
 
+    /** 지금 문항 기준으로 설문을 마쳤는지. 설문 개편으로 다시 설문해야 하면 false */
     public boolean isSurveyCompleted() {
+        return surveyCompletedAt != null;
+    }
+
+    /** 설문을 한 번이라도 제출했는지. 다시 설문해야 하는 사용자도 예전 답이 남아 있다 */
+    public boolean hasSubmittedSurvey() {
         return surveyRevision > 0;
+    }
+
+    /** 예전에 설문을 냈지만 문항이 바뀌어 다시 해야 하는지 */
+    public boolean isSurveyUpdateRequired() {
+        return hasSubmittedSurvey() && !isSurveyCompleted();
     }
 
     public boolean isActive() {

@@ -1,7 +1,6 @@
 package kr.bokjakbokjak.room.service;
 
 import java.util.List;
-import java.util.stream.Stream;
 import kr.bokjakbokjak.common.ApiException;
 import kr.bokjakbokjak.common.ErrorCode;
 import kr.bokjakbokjak.notification.entity.NotificationType;
@@ -52,26 +51,36 @@ class MatchingConfirmer {
         }
 
         matching.confirmBy(userId);
+        String nickname = userReader.read(userId).nickname();
         if (matching.isConfirmed()) {
             endOtherChats(matching);
+            notificationSender.send(partnerId, matchingId, NotificationType.MATCHING_CONFIRMED,
+                    MatchingMessages.matchingConfirmed(nickname));
         } else {
             notificationSender.send(partnerId, matchingId, NotificationType.PARTNER_CONFIRMED,
-                    MatchingMessages.partnerConfirmedFirst(userReader.read(userId).nickname()));
+                    MatchingMessages.partnerConfirmedFirst(nickname));
         }
         matchingRepository.flush();
         return MatchingConfirmResponse.of(matching, userId);
     }
 
     private void endOtherChats(Matching confirmed) {
-        Stream.of(confirmed.getRequesterId(), confirmed.getReceiverId())
-                .flatMap(participant -> matchingRepository.findAllByParticipantAndStatusIn(participant, CHATTING)
-                        .stream())
-                .filter(other -> !other.getId().equals(confirmed.getId()))
-                .distinct()
-                .forEach(other -> {
-                    other.endByPartnerMatched();
-                    chatMessageRepository.save(ChatMessage.system(other.getId(),
-                            MatchingMessages.partnerMatchedElsewhere(), null));
-                });
+        for (Long participant : List.of(confirmed.getRequesterId(), confirmed.getReceiverId())) {
+            List<Matching> others = matchingRepository.findAllByParticipantAndStatusIn(participant, CHATTING).stream()
+                    .filter(other -> !other.getId().equals(confirmed.getId()))
+                    .toList();
+            if (others.isEmpty()) {
+                continue;
+            }
+            String nickname = userReader.read(participant).nickname();
+            for (Matching other : others) {
+                other.endByPartnerMatched();
+                chatMessageRepository.save(ChatMessage.system(other.getId(),
+                        MatchingMessages.partnerMatchedElsewhere(), null));
+                notificationSender.send(other.partnerOf(participant), other.getId(),
+                        NotificationType.PARTNER_MATCHED_ELSEWHERE,
+                        MatchingMessages.matchedElsewhereNotification(nickname));
+            }
+        }
     }
 }

@@ -97,6 +97,7 @@ public class UserQueryServiceImpl implements UserQueryService {
                         user.getBirthYear(),
                         user.getStatus().name(),
                         user.getSurveyRevision(),
+                        user.isSurveyCompleted(),
                         topCategories.getOrDefault(user.getId(), List.of())))
                 .toList();
     }

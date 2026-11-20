@@ -36,4 +36,11 @@ class DevLoginDisabledTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
     }
+
+    @Test
+    void devResetIsHiddenWithoutKey() throws Exception {
+        mvc.perform(post("/api/auth/dev-reset").header("X-Dev-Login-Key", ""))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+    }
 }

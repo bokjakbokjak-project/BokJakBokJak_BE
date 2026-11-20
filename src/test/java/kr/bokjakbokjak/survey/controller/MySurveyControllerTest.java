@@ -72,6 +72,23 @@ class MySurveyControllerTest {
     }
 
     @Test
+    void returnsOnboardingPrioritiesBeforeFirstSubmission() throws Exception {
+        long userId = createUser(true);
+        jdbc.sql("""
+                        insert into user_weight (user_id, category_code, priority_rank)
+                        values (?, 'CLEANING', 1), (?, 'SMOKING', 2), (?, 'SLEEP_SCHEDULE', 3)""")
+                .params(userId, userId, userId)
+                .update();
+
+        mvc.perform(get("/api/me/survey").header("Authorization", bearer(userId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.survey_completed").value(false))
+                .andExpect(jsonPath("$.data.priorities[*].category_code")
+                        .value(contains("CLEANING", "SMOKING", "SLEEP_SCHEDULE")))
+                .andExpect(jsonPath("$.data.answers", hasSize(0)));
+    }
+
+    @Test
     void firstSubmissionSavesAnswersAndPublishesRevision() throws Exception {
         long userId = createUser(true);
 
@@ -89,10 +106,41 @@ class MySurveyControllerTest {
                         .value(contains("CLEANING", "SLEEP_SCHEDULE", "PERSONAL_HYGIENE")))
                 .andExpect(jsonPath("$.data.answers", hasSize(16)))
                 .andExpect(jsonPath("$.data.answers[0].question_code").value("SLEEP_HABITS_H"))
-                .andExpect(jsonPath("$.data.answers[15].question_code").value("SMOKING_T"))
-                .andExpect(jsonPath("$.data.answers[15].option_code").value("OUTSIDE_LOW_ODOR"));
+                .andExpect(jsonPath("$.data.answers[13].question_code").value("SMOKING_T"))
+                .andExpect(jsonPath("$.data.answers[13].option_code").value("OUTSIDE_LOW_ODOR"))
+                .andExpect(jsonPath("$.data.answers[15].question_code").value("TEMPERATURE_T"))
+                .andExpect(jsonPath("$.data.answers[15].option_code").value("LONG_OK"));
 
         assertThat(revisionEvents(userId)).containsExactly(1);
+    }
+
+    @Test
+    void userWaitingForResurveyGetsOldAnswersAndSubmitsWithCurrentRevision() throws Exception {
+        long userId = createUser(true);
+        submit(userId, 0, CLEANING_FIRST, answers()).andExpect(status().isOk());
+        // 설문 개편 마이그레이션 직후 상태: 새 문항 답이 없고 설문 완료 시각이 비어 있다
+        jdbc.sql("delete from survey_answer where user_id = ? and question_code like 'TEMPERATURE%'")
+                .param(userId).update();
+        jdbc.sql("update app_user set survey_completed_at = null where id = ?").param(userId).update();
+
+        mvc.perform(get("/api/me/survey").header("Authorization", bearer(userId)))
+                .andExpect(jsonPath("$.data.revision").value(1))
+                .andExpect(jsonPath("$.data.survey_completed").value(false))
+                .andExpect(jsonPath("$.data.priorities", hasSize(3)))
+                .andExpect(jsonPath("$.data.answers", hasSize(14)));
+        mvc.perform(get("/api/me/status").header("Authorization", bearer(userId)))
+                .andExpect(jsonPath("$.data.survey_completed").value(false))
+                .andExpect(jsonPath("$.data.survey_update_required").value(true))
+                .andExpect(jsonPath("$.data.next_step").value("SURVEY"));
+
+        submit(userId, 1, CLEANING_FIRST, answers())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.revision").value(2))
+                .andExpect(jsonPath("$.data.survey_completed").value(true));
+        mvc.perform(get("/api/me/status").header("Authorization", bearer(userId)))
+                .andExpect(jsonPath("$.data.survey_update_required").value(false))
+                .andExpect(jsonPath("$.data.next_step").value("HOME"));
+        assertThat(revisionEvents(userId)).containsExactly(1, 2);
     }
 
     @Test
@@ -114,20 +162,22 @@ class MySurveyControllerTest {
 
         Map<String, String> changed = answers();
         changed.put("FLOOR_CLEAN_H", "DAILY");
-        String fivePriorities = """
+        String sixPriorities = """
                 [{"category_code":"SMOKING","rank":1},
                  {"category_code":"CLEANING","rank":2},
                  {"category_code":"SLEEP_HABITS","rank":3},
                  {"category_code":"SLEEP_SCHEDULE","rank":4},
-                 {"category_code":"PERSONAL_HYGIENE","rank":5}]""";
+                 {"category_code":"PERSONAL_HYGIENE","rank":5},
+                 {"category_code":"TEMPERATURE","rank":6}]""";
 
-        submit(userId, 1, fivePriorities, changed)
+        submit(userId, 1, sixPriorities, changed)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.revision").value(2));
 
         mvc.perform(get("/api/me/survey").header("Authorization", bearer(userId)))
-                .andExpect(jsonPath("$.data.priorities", hasSize(5)))
+                .andExpect(jsonPath("$.data.priorities", hasSize(6)))
                 .andExpect(jsonPath("$.data.priorities[0].category_code").value("SMOKING"))
+                .andExpect(jsonPath("$.data.priorities[5].category_code").value("TEMPERATURE"))
                 .andExpect(jsonPath("$.data.answers[6].option_code").value("DAILY"));
 
         assertThat(revisionEvents(userId)).containsExactly(1, 2);
@@ -170,7 +220,13 @@ class MySurveyControllerTest {
                 [{"category_code":"CLEANING","rank":1},{"category_code":"ODOR","rank":2},
                  {"category_code":"SLEEP_HABITS","rank":3}]""";
 
-        for (String priorities : List.of(twoOnly, gapInRanks, duplicatedCategory, unknownCategory)) {
+        String seven = """
+                [{"category_code":"SMOKING","rank":1},{"category_code":"CLEANING","rank":2},
+                 {"category_code":"SLEEP_HABITS","rank":3},{"category_code":"SLEEP_SCHEDULE","rank":4},
+                 {"category_code":"PERSONAL_HYGIENE","rank":5},{"category_code":"TEMPERATURE","rank":6},
+                 {"category_code":"ODOR","rank":7}]""";
+
+        for (String priorities : List.of(twoOnly, gapInRanks, duplicatedCategory, unknownCategory, seven)) {
             submit(userId, 0, priorities, answers())
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("INVALID_INPUT"))
@@ -227,10 +283,10 @@ class MySurveyControllerTest {
         answers.put("FOOD_WASTE_T", "SAME_DAY_OK");
         answers.put("BELONGINGS_H", "SAME_DAY");
         answers.put("BELONGINGS_T", "NO_SPACE_INVASION");
-        answers.put("DISHES_H", "NEXT_DAY");
-        answers.put("DISHES_T", "NEXT_DAY_OK");
         answers.put("SMOKING_H", "NON_SMOKER");
         answers.put("SMOKING_T", "OUTSIDE_LOW_ODOR");
+        answers.put("TEMPERATURE_H", "SHORT");
+        answers.put("TEMPERATURE_T", "LONG_OK");
         return answers;
     }
 

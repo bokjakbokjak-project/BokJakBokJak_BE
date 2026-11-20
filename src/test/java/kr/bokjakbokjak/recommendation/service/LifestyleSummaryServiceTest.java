@@ -15,7 +15,9 @@ import kr.bokjakbokjak.matching.SurveyProfileDto;
 import kr.bokjakbokjak.matching.SurveyProfileQueryService;
 import kr.bokjakbokjak.recommendation.dto.LifestyleSummaryResponse;
 import kr.bokjakbokjak.recommendation.repository.LifestyleSummaryRepository;
+import kr.bokjakbokjak.support.FakeUserQueryService;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,6 +31,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @ActiveProfiles("test")
 class LifestyleSummaryServiceTest {
     private static final Long USER = 7L;
+    private static final Long OTHER = 12L;
     private static final String AI_RESPONSE = """
             {"summary":"거의 매일 바닥을 청소해요. 첫 알람에 바로 일어나요.","keywords":["매일 청소","첫 알람","비흡연"]}""";
 
@@ -36,15 +39,23 @@ class LifestyleSummaryServiceTest {
     @MockitoBean LlmClient llmClient;
     @Autowired LifestyleSummaryService lifestyleSummaryService;
     @Autowired LifestyleSummaryRepository repository;
+    @Autowired FakeUserQueryService users;
 
     @DynamicPropertySource
     static void config(DynamicPropertyRegistry registry) {
         registry.add("app.jwt.secret-base64", () -> Base64.getEncoder().encodeToString(new byte[32]));
     }
 
+    @BeforeEach
+    void setUp() {
+        users.clear();
+        users.addUser(USER, "책갈피", 2);
+    }
+
     @AfterEach
     void cleanUp() {
         repository.deleteAll();
+        users.clear();
     }
 
     @Test
@@ -52,8 +63,8 @@ class LifestyleSummaryServiceTest {
         when(surveyProfileQueryService.getSurveyProfile(USER)).thenReturn(profile(2));
         when(llmClient.complete(any())).thenReturn(Optional.of(AI_RESPONSE));
 
-        LifestyleSummaryResponse first = lifestyleSummaryService.getSummary(USER);
-        LifestyleSummaryResponse second = lifestyleSummaryService.getSummary(USER);
+        LifestyleSummaryResponse first = lifestyleSummaryService.getSummary(USER, USER);
+        LifestyleSummaryResponse second = lifestyleSummaryService.getSummary(USER, USER);
 
         assertThat(first.userId()).isEqualTo(USER);
         assertThat(first.summary()).isEqualTo("거의 매일 바닥을 청소해요. 첫 알람에 바로 일어나요.");
@@ -68,10 +79,10 @@ class LifestyleSummaryServiceTest {
     void regeneratesWhenRevisionChanges() {
         when(llmClient.complete(any())).thenReturn(Optional.of(AI_RESPONSE));
         when(surveyProfileQueryService.getSurveyProfile(USER)).thenReturn(profile(2));
-        lifestyleSummaryService.getSummary(USER);
+        lifestyleSummaryService.getSummary(USER, USER);
 
         when(surveyProfileQueryService.getSurveyProfile(USER)).thenReturn(profile(3));
-        lifestyleSummaryService.getSummary(USER);
+        lifestyleSummaryService.getSummary(USER, USER);
 
         verify(llmClient, times(2)).complete(any());
         assertThat(repository.findAll()).singleElement()
@@ -83,7 +94,7 @@ class LifestyleSummaryServiceTest {
         when(surveyProfileQueryService.getSurveyProfile(USER)).thenReturn(profile(2));
         when(llmClient.complete(any())).thenReturn(Optional.empty());
 
-        LifestyleSummaryResponse response = lifestyleSummaryService.getSummary(USER);
+        LifestyleSummaryResponse response = lifestyleSummaryService.getSummary(USER, USER);
 
         assertThat(response.summary()).isEqualTo("청소 청결, 기상 알람, 흡연 유무 순서로 생활습관을 중요하게 생각해요.");
         assertThat(response.keywords()).containsExactly("청소 청결", "기상 알람", "흡연 유무");
@@ -91,13 +102,51 @@ class LifestyleSummaryServiceTest {
     }
 
     @Test
-    void missingOrIncompleteUserIsTargetWithdrawn() {
-        when(surveyProfileQueryService.getSurveyProfile(USER)).thenThrow(new IllegalArgumentException("no survey"));
+    void missingUserIsTargetWithdrawn() {
+        assertRejected(OTHER, "TARGET_WITHDRAWN", HttpStatus.NOT_FOUND);
+    }
 
-        ApiException exception = assertThrows(ApiException.class, () -> lifestyleSummaryService.getSummary(USER));
+    @Test
+    void ownSummaryBeforeSurveyAsksForSurvey() {
+        users.addUser(USER, "책갈피", 0);
 
-        assertThat(exception.code()).isEqualTo("TARGET_WITHDRAWN");
-        assertThat(exception.status()).isEqualTo(HttpStatus.NOT_FOUND);
+        ApiException exception = assertThrows(ApiException.class,
+                () -> lifestyleSummaryService.getSummary(USER, USER));
+
+        assertThat(exception.code()).isEqualTo("SURVEY_REQUIRED");
+        assertThat(exception.status()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void ownSummaryWaitingForResurveyAsksForSurvey() {
+        users.requireResurvey(USER);
+
+        assertRejected(USER, "SURVEY_REQUIRED", HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void otherUserWaitingForResurveyCanStillBeViewed() {
+        users.addUser(OTHER, "민트초코", 2);
+        users.requireResurvey(OTHER);
+        when(surveyProfileQueryService.getSurveyProfile(OTHER)).thenReturn(profile(2));
+        when(llmClient.complete(any())).thenReturn(Optional.of(AI_RESPONSE));
+
+        assertThat(lifestyleSummaryService.getSummary(USER, OTHER).summary()).isNotBlank();
+    }
+
+    @Test
+    void otherUserBeforeSurveyIsNotEligible() {
+        users.addUser(OTHER, "민트초코", 0);
+
+        assertRejected(OTHER, "TARGET_NOT_ELIGIBLE", HttpStatus.FORBIDDEN);
+    }
+
+    private void assertRejected(Long target, String code, HttpStatus status) {
+        ApiException exception = assertThrows(ApiException.class,
+                () -> lifestyleSummaryService.getSummary(USER, target));
+
+        assertThat(exception.code()).isEqualTo(code);
+        assertThat(exception.status()).isEqualTo(status);
     }
 
     private static SurveyProfileDto profile(int revision) {

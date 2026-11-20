@@ -32,7 +32,7 @@ public class MySurveyController {
         return ApiResponse.success(SuccessCode.MY_SURVEY_SUCCESS, mySurveyService.getMySurvey(userId));
     }
 
-    @Operation(summary = "설문 제출·수정", description = "카테고리 3~5개 순위와 16문항 답변 전체를 저장한다.")
+    @Operation(summary = "설문 제출·수정", description = "카테고리 3~6개 순위와 16문항 답변 전체를 저장한다.")
     @PutMapping
     public ApiResponse.Success<SurveySubmitResponse> submit(
             @AuthenticationPrincipal Long userId,

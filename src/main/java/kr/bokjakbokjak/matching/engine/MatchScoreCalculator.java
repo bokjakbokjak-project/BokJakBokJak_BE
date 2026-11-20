@@ -14,10 +14,13 @@ import kr.bokjakbokjak.matching.MatchResultDto;
  * 두 사용자의 적합도 계산 (DB와 무관한 순수 계산).
  *
  * viewer→target = Σ(viewer의 주제 가중치 × target 습관이 viewer 허용범위에 맞는 정도) ÷ Σ(viewer의 주제 가중치)
- * 최종 점수 = 두 방향의 조화평균 (둘 다 0이면 0)
+ * 최종 점수 = 두 방향의 조화평균 (둘 다 0이면 0). 흡연 거부 충돌이 있으면 최종 점수에 0.6을 곱한다
  * 주제 가중치 = 카테고리 가중치 ÷ 카테고리에 속한 주제 수
  */
 final class MatchScoreCalculator {
+    static final double SMOKING_CONFLICT_FACTOR = 0.6;
+    static final String NOT_ANSWERED = "아직 답하지 않았어요";
+
     private static final int SCORE_SCALE = 4;
     private static final int WEIGHT_SCALE = 2;
 
@@ -30,12 +33,9 @@ final class MatchScoreCalculator {
     }
 
     record Profile(Long userId, Map<String, Integer> rankByCategory, Map<String, String> optionByQuestion) {
+        /** 설문 개편 뒤 다시 설문하기 전이면 새 문항의 답이 없을 수 있다. 없으면 null */
         String option(String questionCode) {
-            String option = optionByQuestion.get(questionCode);
-            if (option == null) {
-                throw new IllegalStateException("답변이 없는 문항입니다: user=%d, %s".formatted(userId, questionCode));
-            }
-            return option;
+            return optionByQuestion.get(questionCode);
         }
     }
 
@@ -56,6 +56,7 @@ final class MatchScoreCalculator {
         double targetScore = 0;
         double targetTotal = 0;
         List<MatchItemDto> items = new ArrayList<>();
+        boolean smokingConflict = false;
 
         for (Topic topic : topics) {
             long topicCount = topicsPerCategory.get(topic.categoryCode());
@@ -71,6 +72,9 @@ final class MatchScoreCalculator {
             TopicRules.Judgment forViewer = TopicRules.judge(topic.topicCode(), targetHabit, viewerTolerance);
             // target 입장: 나(viewer)의 습관이 상대 허용범위에 맞는가
             TopicRules.Judgment forTarget = TopicRules.judge(topic.topicCode(), viewerHabit, targetTolerance);
+
+            smokingConflict |= TopicRules.isSmokingConflict(topic.topicCode(), forViewer)
+                    || TopicRules.isSmokingConflict(topic.topicCode(), forTarget);
 
             viewerScore += viewerWeight * forViewer.score();
             viewerTotal += viewerWeight;
@@ -93,10 +97,14 @@ final class MatchScoreCalculator {
 
         double viewerToTarget = viewerScore / viewerTotal;
         double targetToViewer = targetScore / targetTotal;
+        double mutual = harmonicMean(viewerToTarget, targetToViewer);
+        if (smokingConflict) {
+            mutual *= SMOKING_CONFLICT_FACTOR;
+        }
         return new MatchResultDto(
                 viewer.userId(),
                 target.userId(),
-                score(harmonicMean(viewerToTarget, targetToViewer)),
+                score(mutual),
                 score(viewerToTarget),
                 score(targetToViewer),
                 items);
@@ -120,6 +128,9 @@ final class MatchScoreCalculator {
     }
 
     private static String labelOf(Map<String, Map<String, String>> labels, String questionCode, String optionCode) {
+        if (optionCode == null) {
+            return NOT_ANSWERED;
+        }
         return labels.getOrDefault(questionCode, Map.of()).getOrDefault(optionCode, optionCode);
     }
 

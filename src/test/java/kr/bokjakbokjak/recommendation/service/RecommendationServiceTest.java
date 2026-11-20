@@ -150,16 +150,26 @@ class RecommendationServiceTest {
         ApiException exception = assertThrows(ApiException.class,
                 () -> recommendationService.getRecommendations(VIEWER));
 
-        assertThat(exception.code()).isEqualTo("ONBOARDING_REQUIRED");
+        assertThat(exception.code()).isEqualTo("SURVEY_REQUIRED");
         assertThat(exception.status()).isEqualTo(HttpStatus.CONFLICT);
     }
 
     @Test
-    void unknownViewerIsAskedToOnboard() {
+    void viewerWaitingForResurveyMustTakeSurvey() {
+        users.requireResurvey(VIEWER);
+
+        ApiException exception = assertThrows(ApiException.class,
+                () -> recommendationService.getRecommendations(VIEWER));
+
+        assertThat(exception.code()).isEqualTo("SURVEY_REQUIRED");
+    }
+
+    @Test
+    void unknownViewerIsAskedToTakeSurvey() {
         ApiException exception = assertThrows(ApiException.class,
                 () -> recommendationService.refresh(999L));
 
-        assertThat(exception.code()).isEqualTo("ONBOARDING_REQUIRED");
+        assertThat(exception.code()).isEqualTo("SURVEY_REQUIRED");
     }
 
     private Long start(long requesterId, long receiverId) {

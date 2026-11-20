@@ -50,8 +50,8 @@ public class RecommendationService {
         UserSummaryDto viewer = userQueryService.getUserSummaries(List.of(viewerId)).stream()
                 .filter(user -> user.userId().equals(viewerId))
                 .findFirst()
-                .filter(user -> user.surveyRevision() > 0)
-                .orElseThrow(() -> new ApiException(ErrorCode.ONBOARDING_REQUIRED));
+                .filter(UserSummaryDto::surveyCompleted)
+                .orElseThrow(() -> new ApiException(ErrorCode.SURVEY_REQUIRED));
         Map<Long, CandidateDto> candidates = eligibleCandidates(viewerId);
         Map<Long, Integer> revisions = surveyRevisionsOf(candidates.keySet());
         RecommendationCalculator.Result result = calculator.calculate(viewerId, viewer.surveyRevision(), revisions,

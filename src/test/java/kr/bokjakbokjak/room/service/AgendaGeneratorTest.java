@@ -49,11 +49,11 @@ class AgendaGeneratorTest {
     void fillsWithWellMatchedTopicWhenFewTopicsNeedTalking() {
         List<MatchItemDto> items = List.of(
                 item("FLOOR_CLEAN", MatchLabel.GOOD, "0.5"),
-                item("DISHES", MatchLabel.NEED_CHECK, "0.1"),
+                item("TEMPERATURE", MatchLabel.NEED_CHECK, "0.1"),
                 item("SMOKING", MatchLabel.GOOD, "0.9"));
 
         assertThat(AgendaTopicSelector.select(items)).extracting(MatchItemDto::topicCode)
-                .containsExactly("DISHES", "SMOKING");
+                .containsExactly("TEMPERATURE", "SMOKING");
     }
 
     @Test
@@ -106,7 +106,7 @@ class AgendaGeneratorTest {
                 new MatchItemDto("BEDTIME", "SLEEP_SCHEDULE", "평일 밤이에요.", BigDecimal.ZERO,
                         MatchLabel.NEED_ADJUST, new BigDecimal("0.1"), new BigDecimal("0.1"),
                         "새벽 1시 이후", "12시 전에 꺼 주면 좋겠다", "11시 전", "12시까지 괜찮다"),
-                item("DISHES", MatchLabel.NEED_CHECK, "0.3"),
+                item("TEMPERATURE", MatchLabel.NEED_CHECK, "0.3"),
                 new MatchItemDto("ALARM", "SLEEP_SCHEDULE", "아침 알람이 울려요.", BigDecimal.ZERO,
                         MatchLabel.NEED_ADJUST, new BigDecimal("0.2"), new BigDecimal("0.2"),
                         "다섯 번 이상", "한 번에 꺼 주면 좋겠다", "한 번에 끈다", "두세 번까지 괜찮다"));

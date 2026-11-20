@@ -49,7 +49,7 @@ public class OnboardingService {
 
         User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
-        if (user.isSurveyCompleted()) {
+        if (user.hasSubmittedSurvey()) {
             throw new ApiException(ErrorCode.ONBOARDING_ALREADY_SUBMITTED);
         }
         DormitoryRoomType roomType = roomTypeRepository.findById(request.roomTypeId())

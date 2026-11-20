@@ -91,7 +91,7 @@ public class ProfileService {
         return survey.topCategories().stream().map(SurveyProfileDto.CategoryRank::code).toList();
     }
 
-    /** 카테고리 5개를 표시 순서대로, 그 안의 주제도 표시 순서대로 묶는다. 순위 선택과 무관하게 전부 담는다 */
+    /** 카테고리 6개를 표시 순서대로, 그 안의 주제도 표시 순서대로 묶는다. 순위 선택과 무관하게 전부 담는다 */
     private List<ProfileCategory> categories(SurveyProfileDto survey) {
         Map<String, List<ProfileCategory.Topic>> topicsByCategory = survey.topics().stream()
                 .collect(Collectors.groupingBy(

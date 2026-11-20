@@ -34,7 +34,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
               and u.roomTypeId in :roomTypeIds
               and u.status = :status
               and u.onboardingCompletedAt is not null
-              and u.surveyRevision > 0
+              and u.surveyCompletedAt is not null
             order by u.id""")
     List<User> findCandidates(
             @Param("viewerId") Long viewerId,

@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class SurveyProfileService implements SurveyProfileQueryService {
     private static final int TOP_CATEGORY_COUNT = 3;
+    private static final String NOT_ANSWERED = "아직 답하지 않았어요";
 
     private final UserRepository userRepository;
     private final UserWeightRepository weightRepository;
@@ -58,8 +59,9 @@ public class SurveyProfileService implements SurveyProfileQueryService {
         // 차수를 답변보다 먼저 읽는다. 도중에 설문이 수정돼도 차수가 옛 값으로 남아 다음 조회에서 다시 만들어진다
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다: " + userId));
-        if (!user.isSurveyCompleted()) {
-            throw new IllegalArgumentException("설문을 완료하지 않은 사용자입니다: " + userId);
+        // 다시 설문하기 전인 사용자는 예전 답으로 만든다. 새 문항은 답하지 않은 것으로 표시된다
+        if (!user.hasSubmittedSurvey()) {
+            throw new IllegalArgumentException("설문을 제출한 적이 없는 사용자입니다: " + userId);
         }
 
         Map<String, String> categoryNames = categoryRepository.findAll().stream()
@@ -105,6 +107,10 @@ public class SurveyProfileService implements SurveyProfileQueryService {
             Question question,
             Map<String, String> optionByQuestion,
             Map<String, Map<String, String>> labelsByQuestion) {
-        return labelsByQuestion.get(question.getCode()).get(optionByQuestion.get(question.getCode()));
+        String option = optionByQuestion.get(question.getCode());
+        if (option == null) {
+            return NOT_ANSWERED;
+        }
+        return labelsByQuestion.get(question.getCode()).get(option);
     }
 }

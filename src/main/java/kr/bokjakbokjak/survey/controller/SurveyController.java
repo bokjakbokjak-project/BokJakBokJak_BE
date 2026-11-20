@@ -20,7 +20,7 @@ public class SurveyController {
         this.surveyCatalogService = surveyCatalogService;
     }
 
-    @Operation(summary = "현재 설문 문항 조회", description = "카테고리 5개, 주제 8개, 16문항과 선택지를 표시 순서대로 반환한다.")
+    @Operation(summary = "현재 설문 문항 조회", description = "카테고리 6개, 주제 8개, 16문항과 선택지를 표시 순서대로 반환한다.")
     @GetMapping("/current")
     public ApiResponse.Success<SurveyCatalogResponse> getCurrentSurvey() {
         return ApiResponse.success(SuccessCode.SURVEY_SCHEMA_SUCCESS, surveyCatalogService.getCurrentSurvey());

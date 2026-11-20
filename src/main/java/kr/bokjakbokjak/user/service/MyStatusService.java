@@ -35,7 +35,7 @@ public class MyStatusService {
         return new MyStatusResponse(
                 user.isOnboardingCompleted(),
                 user.isSurveyCompleted(),
-                false,
+                user.isSurveyUpdateRequired(),
                 NextStep.of(user),
                 matchingId != null,
                 matchingId);

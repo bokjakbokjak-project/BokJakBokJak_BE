@@ -26,7 +26,7 @@ public class ProfileController {
     }
 
     @Operation(summary = "내 성향 프로필 조회",
-            description = "카테고리 5개·주제 8개의 습관 질문, 나의 성향, 원하는 성향을 표시 순서대로 반환한다. 설문 전이면 409.")
+            description = "카테고리 6개·주제 8개의 습관 질문, 나의 성향, 원하는 성향을 표시 순서대로 반환한다. 설문 전이면 409.")
     @GetMapping("/api/me/profile")
     public ApiResponse.Success<MyProfileResponse> getMyProfile(@AuthenticationPrincipal Long userId) {
         return ApiResponse.success(SuccessCode.MY_PROFILE_SUCCESS, profileService.getMyProfile(userId));

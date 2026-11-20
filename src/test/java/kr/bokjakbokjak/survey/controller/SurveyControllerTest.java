@@ -45,13 +45,13 @@ class SurveyControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("SURVEY_SCHEMA_SUCCESS"))
                 .andExpect(jsonPath("$.data.categories[*].category_code").value(contains(
-                        "SLEEP_HABITS", "SLEEP_SCHEDULE", "CLEANING", "PERSONAL_HYGIENE", "SMOKING")))
+                        "SLEEP_HABITS", "SLEEP_SCHEDULE", "CLEANING", "PERSONAL_HYGIENE", "SMOKING", "TEMPERATURE")))
                 .andExpect(jsonPath("$.data.topics[*].topic_code").value(contains(
                         "SLEEP_HABITS", "BEDTIME", "ALARM", "FLOOR_CLEAN",
-                        "FOOD_WASTE", "BELONGINGS", "DISHES", "SMOKING")))
+                        "FOOD_WASTE", "BELONGINGS", "SMOKING", "TEMPERATURE")))
                 .andExpect(jsonPath("$.data.topics[*].category_code").value(contains(
                         "SLEEP_HABITS", "SLEEP_SCHEDULE", "SLEEP_SCHEDULE", "CLEANING",
-                        "CLEANING", "PERSONAL_HYGIENE", "PERSONAL_HYGIENE", "SMOKING")));
+                        "CLEANING", "PERSONAL_HYGIENE", "SMOKING", "TEMPERATURE")));
     }
 
     @Test
@@ -61,7 +61,7 @@ class SurveyControllerTest {
                         1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)))
                 .andExpect(jsonPath("$.data.topics[*].questions[0].kind").value(everyItem(is("HABIT"))))
                 .andExpect(jsonPath("$.data.topics[*].questions[1].kind").value(everyItem(is("TOLERANCE"))))
-                .andExpect(jsonPath("$.data.topics[*].questions[*].options[*]", hasSize(71)));
+                .andExpect(jsonPath("$.data.topics[*].questions[*].options[*]", hasSize(70)));
     }
 
     @Test
@@ -81,11 +81,16 @@ class SurveyControllerTest {
                 .andExpect(jsonPath("$.data.topics[1].questions[1].options[4].label").value("큰 소음이 아니라면 상관없다"))
                 .andExpect(jsonPath("$.data.topics[5].scenario_text")
                         .value("옷과 가방, 책 같은 개인 물건이 방 안에 꺼내져 있어요."))
-                .andExpect(jsonPath("$.data.topics[7].questions[0].options[1].label")
+                .andExpect(jsonPath("$.data.topics[6].questions[0].options[1].label")
                         .value("흡연자이지만 기숙사에서는 자제할 예정이다"))
-                .andExpect(jsonPath("$.data.topics[7].questions[1].question_code").value("SMOKING_T"))
-                .andExpect(jsonPath("$.data.topics[7].questions[1].options[3].label")
-                        .value("흡연자와는 같은 방이 어렵다"));
+                .andExpect(jsonPath("$.data.topics[6].questions[1].question_code").value("SMOKING_T"))
+                .andExpect(jsonPath("$.data.topics[6].questions[1].options[3].label")
+                        .value("흡연자와는 같은 방이 어렵다"))
+                .andExpect(jsonPath("$.data.topics[7].questions[0].question_code").value("TEMPERATURE_H"))
+                .andExpect(jsonPath("$.data.topics[7].questions[0].options[*].option_code").value(contains(
+                        "ALWAYS_ON", "LONG", "SHORT", "RARELY")))
+                .andExpect(jsonPath("$.data.topics[7].questions[1].options[*].option_code").value(contains(
+                        "ALWAYS_ON_OK", "LONG_OK", "SHORT_ONLY", "RARELY_ONLY")));
     }
 
     private String bearer() {

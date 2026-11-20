@@ -78,10 +78,13 @@ class UserQueryServiceImplTest {
         long withdrawn = copyOf(bookmark, "탈퇴한후보", "WITHDRAWN");
         long suspended = copyOf(bookmark, "정지된후보", "SUSPENDED");
         long active = copyOf(bookmark, "활성후보", "ACTIVE");
+        long waitingForResurvey = copyOf(bookmark, "재설문대기", "ACTIVE");
+        jdbc.sql("update app_user set survey_completed_at = null where id = ?").param(waitingForResurvey).update();
 
         List<Long> ids = userQueryService.findCandidates(bookmark).stream().map(CandidateDto::userId).toList();
 
-        assertThat(ids).contains(active).doesNotContain(withdrawn, suspended);
+        assertThat(ids).contains(active).doesNotContain(withdrawn, suspended, waitingForResurvey);
+        assertThat(userQueryService.getUserSummaries(List.of(waitingForResurvey)).get(0).surveyCompleted()).isFalse();
     }
 
     @Test
@@ -99,7 +102,7 @@ class UserQueryServiceImplTest {
         assertThat(summary.department()).isEqualTo("산업공학과");
         assertThat(summary.birthYear()).isEqualTo(2004);
         assertThat(summary.status()).isEqualTo("ACTIVE");
-        assertThat(summary.surveyRevision()).isEqualTo(1);
+        assertThat(summary.surveyRevision()).isEqualTo(2);
         assertThat(summary.surveyCompleted()).isTrue();
         assertThat(summary.topCategories()).containsExactly("CLEANING", "SLEEP_SCHEDULE", "SMOKING");
     }
@@ -132,9 +135,10 @@ class UserQueryServiceImplTest {
         jdbc.sql("""
                         insert into app_user (university_id, nickname, gender, birth_year, department, student_number,
                                               room_type_id, status, onboarding_completed_at, survey_revision,
-                                              created_at, updated_at)
+                                              survey_completed_at, created_at, updated_at)
                         select university_id, ?, gender, birth_year, department, student_number,
-                               room_type_id, ?, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                               room_type_id, ?, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP,
+                               CURRENT_TIMESTAMP
                         from app_user where id = ?""")
                 .params(nickname, status, sourceId)
                 .update();

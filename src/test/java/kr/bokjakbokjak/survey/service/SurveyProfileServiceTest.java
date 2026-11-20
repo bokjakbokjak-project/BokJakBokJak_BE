@@ -54,7 +54,7 @@ class SurveyProfileServiceTest {
         assertThat(profile.topics())
                 .extracting(SurveyProfileDto.TopicAnswer::topicCode)
                 .containsExactly("SLEEP_HABITS", "BEDTIME", "ALARM", "FLOOR_CLEAN",
-                        "FOOD_WASTE", "BELONGINGS", "DISHES", "SMOKING");
+                        "FOOD_WASTE", "BELONGINGS", "SMOKING", "TEMPERATURE");
 
         SurveyProfileDto.TopicAnswer bedtime = profile.topics().get(1);
         assertThat(bedtime.categoryCode()).isEqualTo("SLEEP_SCHEDULE");
@@ -66,9 +66,29 @@ class SurveyProfileServiceTest {
                 .isEqualTo("룸메이트가 방 안에서 깨어 있어도 괜찮은 마감 시간은 언제까지인가요?");
         assertThat(bedtime.toleranceAnswer()).isEqualTo("새벽 1시까지");
 
-        SurveyProfileDto.TopicAnswer smoking = profile.topics().get(7);
+        SurveyProfileDto.TopicAnswer smoking = profile.topics().get(6);
         assertThat(smoking.habitAnswer()).isEqualTo("비흡연자다");
         assertThat(smoking.toleranceAnswer()).isEqualTo("흡연 여부는 상관없다");
+
+        SurveyProfileDto.TopicAnswer temperature = profile.topics().get(7);
+        assertThat(temperature.categoryName()).isEqualTo("온도");
+        assertThat(temperature.habitAnswer()).isEqualTo("덥거나 추울 때 일정시간 이상 켜둔다");
+        assertThat(temperature.toleranceAnswer()).isEqualTo("덥거나 추울 때 일정시간 이상 켜두어도 괜찮다");
+    }
+
+    @Test
+    void userWaitingForResurveyKeepsOldAnswers() {
+        long userId = createUser();
+        submit(userId, 0, List.of("CLEANING", "SLEEP_SCHEDULE", "PERSONAL_HYGIENE"), Map.of());
+        jdbc.sql("delete from survey_answer where user_id = ? and question_code like 'TEMPERATURE%'")
+                .param(userId).update();
+        jdbc.sql("update app_user set survey_completed_at = null where id = ?").param(userId).update();
+
+        SurveyProfileDto profile = surveyProfileQueryService.getSurveyProfile(userId);
+
+        assertThat(profile.surveyRevision()).isEqualTo(1);
+        assertThat(profile.topics().get(1).habitAnswer()).isEqualTo("밤 10시~12시");
+        assertThat(profile.topics().get(7).habitAnswer()).isEqualTo("아직 답하지 않았어요");
     }
 
     @Test
@@ -102,8 +122,8 @@ class SurveyProfileServiceTest {
                 Map.entry("FLOOR_CLEAN_H", "WEEKLY"), Map.entry("FLOOR_CLEAN_T", "WEEKLY_MIN"),
                 Map.entry("FOOD_WASTE_H", "SAME_DAY"), Map.entry("FOOD_WASTE_T", "SAME_DAY_OK"),
                 Map.entry("BELONGINGS_H", "IMMEDIATELY"), Map.entry("BELONGINGS_T", "SAME_DAY_OK"),
-                Map.entry("DISHES_H", "SAME_DAY"), Map.entry("DISHES_T", "SAME_DAY_OK"),
-                Map.entry("SMOKING_H", "NON_SMOKER"), Map.entry("SMOKING_T", "ANY_OK")));
+                Map.entry("SMOKING_H", "NON_SMOKER"), Map.entry("SMOKING_T", "ANY_OK"),
+                Map.entry("TEMPERATURE_H", "LONG"), Map.entry("TEMPERATURE_T", "LONG_OK")));
         answers.putAll(overrides);
 
         List<SurveySubmitRequest.Priority> priorities = new ArrayList<>();

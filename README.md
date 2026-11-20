@@ -51,7 +51,11 @@ JPA 엔티티가 생성·수정 시각이 필요하면 `BaseEntity`를 상속합
   - 응답의 `next_step`은 온보딩 전 `ONBOARDING`, 설문 전 `SURVEY`, 둘 다 마치면 `HOME`입니다.
 - 액세스 토큰은 30분, 리프레시 토큰은 14일입니다. `POST /api/auth/refresh`로 두 토큰을 모두 새로 받고, 쓴 리프레시 토큰은 바로 폐기됩니다.
 - `POST /api/auth/logout`은 현재 액세스 토큰을 남은 시간 동안 차단하고 리프레시 토큰을 지웁니다.
-- `POST /api/auth/dev-login`은 개발·시연용입니다. `X-Dev-Login-Key` 헤더가 `DEV_LOGIN_KEY`와 같고 대상이 테스트 유저일 때만 토큰을 줍니다. 아래 테스트 유저 표의 회원 ID로 로그인합니다.
+- `POST /api/auth/dev-login`은 개발·시연용입니다. `X-Dev-Login-Key` 헤더가 `DEV_LOGIN_KEY`와 같고 대상이 테스트 유저일 때만 토큰을 줍니다.
+  - 본문에 `user_id`나 `nickname` 중 하나만 보냅니다. 환경마다 회원 ID가 다를 수 있어서 `{"nickname": "책갈피"}`처럼 닉네임으로 로그인하는 것을 권장합니다.
+  - 같은 닉네임의 테스트 유저가 여러 명이면 400이므로 `user_id`로 로그인합니다.
+  - CORS에서 `X-Dev-Login-Key` 헤더를 허용하므로 브라우저에서도 호출할 수 있습니다.
+- `POST /api/auth/dev-reset`은 시연 리허설용 초기화입니다. 같은 키로 보호되며, 두 사람 모두 테스트 유저인 매칭과 그 매칭의 메시지·안건·알림을 지웁니다. 실제 회원이 포함된 매칭은 남깁니다.
 - 테스트에서는 Redis 대신 메모리 저장소(`InMemoryAuthTokenStore`)를 씁니다.
 
 ## 온보딩과 기숙사
